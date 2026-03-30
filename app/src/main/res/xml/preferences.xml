@@ -217,6 +217,49 @@
             android:summary="@string/summary_fullexdisplay_mode"
             android:title="@string/title_fullexdisplay_mode"
             app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="checkbox_foldable_enabled"
+            android:summary="@string/summary_foldable_enabled"
+            android:title="@string/title_foldable_enabled"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="checkbox_foldable_enabled"
+            android:key="checkbox_foldable_flex_mode"
+            android:summary="@string/summary_foldable_flex_mode"
+            android:title="@string/title_foldable_flex_mode"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="checkbox_foldable_enabled"
+            android:key="checkbox_foldable_auto_resolution"
+            android:summary="@string/summary_foldable_auto_resolution"
+            android:title="@string/title_foldable_auto_resolution"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:defaultValue="1280x720"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:entries="@array/resolution_names"
+            android:entryValues="@array/resolution_values"
+            android:key="list_foldable_folded_resolution"
+            android:summary="@string/summary_foldable_folded_resolution"
+            android:title="@string/title_foldable_folded_resolution"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:defaultValue="1920x1080"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:entries="@array/resolution_names"
+            android:entryValues="@array/resolution_values"
+            android:key="list_foldable_unfolded_resolution"
+            android:summary="@string/summary_foldable_unfolded_resolution"
+            android:title="@string/title_foldable_unfolded_resolution"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory

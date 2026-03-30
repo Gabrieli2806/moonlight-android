@@ -52,6 +52,8 @@ import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.SpinnerDialog;
 import com.limelight.utils.UiHelper;
+import com.limelight.utils.FoldableDeviceHelper;
+import com.limelight.ui.FlexModePanel;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -178,6 +180,10 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
 
     private PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
+    private FoldableDeviceHelper foldableDeviceHelper;
+    private FoldableDeviceHelper.FoldState lastFoldState = FoldableDeviceHelper.FoldState.UNKNOWN;
+    private boolean flexModeApplied = false;
+    private FlexModePanel flexModePanel;
 
     private int displayWidth;
     private int displayHeight;
@@ -353,6 +359,13 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         // Read the stream preferences
         prefConfig = PreferenceConfiguration.readPreferences(this);
         tombstonePrefs = Game.this.getSharedPreferences("DecoderTombstone", 0);
+
+        if (prefConfig.foldableEnabled) {
+            foldableDeviceHelper = new FoldableDeviceHelper(this);
+            foldableDeviceHelper.setListener((state, hingeBounds) -> handleFoldStateChanged(state));
+        }
+
+        applyFoldAwareResolution(lastFoldState);
 
         if (prefConfig.fullScreen) {
             // Full-screen
@@ -817,6 +830,21 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             trackpadContextMap[i] = new TrackpadContext(conn, i, prefConfig.trackpadSwapAxis, prefConfig.trackpadSensitivityX, prefConfig.trackpadSensitivityY);
         }
 
+        // Initialize flex mode panel for foldable devices
+        if (prefConfig.foldableEnabled) {
+            flexModePanel = new FlexModePanel(this, conn, new FlexModePanel.KeyboardToggleCallback() {
+                @Override
+                public void onToggleSoftKeyboard() {
+                    toggleKeyboard();
+                }
+
+                @Override
+                public void onToggleFullKeyboard() {
+                    toggleFullKeyboard();
+                }
+            });
+        }
+
         if (Objects.equals(appUUID, NvApp.REMOTE_INPUT_UUID)) {
             // Force trackpad mode since we won't see anything on the screen
             isInputOnly = true;
@@ -1141,6 +1169,119 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         prefConfig.onscreenController= virtualController.switchShowHide() != 0;
     }
 
+    private boolean applyFoldAwareResolution(FoldableDeviceHelper.FoldState foldState) {
+        if (!prefConfig.foldableEnabled || !prefConfig.foldableAutoResolution) {
+            return false;
+        }
+
+        int newWidth;
+        int newHeight;
+
+        if (foldState == FoldableDeviceHelper.FoldState.HALF_OPENED) {
+            newWidth = prefConfig.foldableUnfoldedWidth;
+            newHeight = prefConfig.foldableUnfoldedHeight;
+        }
+        else {
+            boolean isLargeInnerDisplay = getResources().getConfiguration().smallestScreenWidthDp >= 600;
+            if (isLargeInnerDisplay) {
+                newWidth = prefConfig.foldableUnfoldedWidth;
+                newHeight = prefConfig.foldableUnfoldedHeight;
+            }
+            else {
+                newWidth = prefConfig.foldableFoldedWidth;
+                newHeight = prefConfig.foldableFoldedHeight;
+            }
+        }
+
+        if (prefConfig.width != newWidth || prefConfig.height != newHeight) {
+            prefConfig.width = newWidth;
+            prefConfig.height = newHeight;
+            displayWidth = newWidth;
+            displayHeight = newHeight;
+            LimeLog.info("Foldable: applied stream resolution " + newWidth + "x" + newHeight);
+            return true;
+        }
+        return false;
+    }
+
+    private void applyFlexModeLayout(boolean enabled) {
+        if (!prefConfig.foldableEnabled || !prefConfig.foldableFlexMode) {
+            return;
+        }
+
+        if (enabled == flexModeApplied) {
+            return;
+        }
+
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int halfHeight = screenHeight / 2;
+
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) streamContainer.getLayoutParams();
+
+        if (enabled) {
+            params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            params.height = halfHeight;
+            streamContainer.setLayoutParams(params);
+
+            // Show touchpad panel in the bottom half
+            if (flexModePanel != null) {
+                flexModePanel.show(halfHeight);
+            }
+
+            if (keyBoardLayoutController != null) {
+                keyBoardLayoutController.refreshLayout();
+                if (keyBoardLayoutController.shown) {
+                    keyBoardLayoutController.show();
+                }
+            }
+
+            if (virtualController != null) {
+                virtualController.refreshLayout();
+            }
+
+            flexModeApplied = true;
+            LimeLog.info("Foldable: Flex Mode applied");
+        }
+        else {
+            params.gravity = Gravity.CENTER;
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            streamContainer.setLayoutParams(params);
+
+            // Hide touchpad panel
+            if (flexModePanel != null) {
+                flexModePanel.hide();
+            }
+
+            if (keyBoardLayoutController != null && keyBoardLayoutController.shown) {
+                keyBoardLayoutController.hide(false);
+            }
+
+            if (virtualController != null) {
+                virtualController.refreshLayout();
+            }
+
+            flexModeApplied = false;
+            LimeLog.info("Foldable: Flex Mode cleared");
+        }
+    }
+
+    private void handleFoldStateChanged(FoldableDeviceHelper.FoldState state) {
+        boolean postureChanged = state != lastFoldState;
+
+        lastFoldState = state;
+
+        boolean resolutionChanged = applyFoldAwareResolution(state);
+        applyFlexModeLayout(state == FoldableDeviceHelper.FoldState.HALF_OPENED
+            && foldableDeviceHelper != null
+            && foldableDeviceHelper.isHingeHorizontal());
+
+        if (connected && postureChanged && resolutionChanged) {
+            Toast.makeText(this,
+                    getString(R.string.toast_foldable_reconnect_required),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void setPreferredOrientationForActivity() {
         Display display = getActiveDisplay(Game.this, prefConfig);
 
@@ -1187,6 +1328,13 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+
+        prefConfig = PreferenceConfiguration.readPreferences(this);
+
+        if (foldableDeviceHelper != null) {
+            applyFoldAwareResolution(foldableDeviceHelper.getCurrentState());
+            applyFlexModeLayout(foldableDeviceHelper.isInFlexMode() && foldableDeviceHelper.isHingeHorizontal());
+        }
 
         // Set requested orientation for possible new screen size
         setPreferredOrientationForActivity();
@@ -1758,8 +1906,22 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (foldableDeviceHelper != null) {
+            foldableDeviceHelper.start();
+            handleFoldStateChanged(foldableDeviceHelper.getCurrentState());
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
+
+        if (foldableDeviceHelper != null) {
+            foldableDeviceHelper.stop();
+        }
 
         SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();

@@ -117,6 +117,13 @@ public class PreferenceConfiguration {
 
     private static final String CHECKBOX_SHOW_OVERLAY_ZOOM_TOGGLE_BUTTON = "checkbox_show_overlay_zoom_toggle_button";
 
+    // Foldable device preferences
+    private static final String CHECKBOX_FOLDABLE_ENABLED = "checkbox_foldable_enabled";
+    private static final String CHECKBOX_FOLDABLE_FLEX_MODE = "checkbox_foldable_flex_mode";
+    private static final String CHECKBOX_FOLDABLE_AUTO_RESOLUTION = "checkbox_foldable_auto_resolution";
+    private static final String FOLDABLE_FOLDED_RESOLUTION_PREF_STRING = "list_foldable_folded_resolution";
+    private static final String FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING = "list_foldable_unfolded_resolution";
+
     //竖屏模式
     private static final String CHECKBOX_AUTO_ORIENTATION = "checkbox_auto_orientation";
     //屏幕特殊按键
@@ -209,6 +216,13 @@ public class PreferenceConfiguration {
     private static final String DEFAULT_ONSCREEN_KEYBOARD_ALIGN_MODE = "center";
     private static final boolean DEFAULT_SHOW_OVERLAY_TOGGLE_BUTTON = false;
 
+    // Foldable device defaults
+    private static final boolean DEFAULT_FOLDABLE_ENABLED = false;
+    private static final boolean DEFAULT_FOLDABLE_FLEX_MODE = true;
+    private static final boolean DEFAULT_FOLDABLE_AUTO_RESOLUTION = true;
+    static final String DEFAULT_FOLDABLE_FOLDED_RESOLUTION = "1280x720";
+    static final String DEFAULT_FOLDABLE_UNFOLDED_RESOLUTION = "1920x1080";
+
     private static final boolean DEFAULT_REMEMBER_ZOOM_PAN = false;
     private static final float DEFAULT_ZOOM_SCALE = 1.0f;
     private static final float DEFAULT_PAN_OFFSET = 0.0f;
@@ -298,6 +312,13 @@ public class PreferenceConfiguration {
     public boolean enableNewAnalogStick;
 
     public boolean enableFullExDisplay;
+
+    // Foldable device settings
+    public boolean foldableEnabled;
+    public boolean foldableFlexMode;
+    public boolean foldableAutoResolution;
+    public int foldableFoldedWidth, foldableFoldedHeight;
+    public int foldableUnfoldedWidth, foldableUnfoldedHeight;
 
     //串流画面顶部居中显示
     public boolean alignDisplayTopCenter;
@@ -1035,6 +1056,29 @@ private static int getFramePacingValue(Context context) {
         config.parallax_depth = prefs.getInt(PARALLAX_DEPTH, 50) / 100f;
         config.convergence_ratio = prefs.getInt(CONVERGENCE_RATIO, 50) / 100f;
         config.balance_shift = prefs.getInt(BALANCE_SHIFT, 50) / 100f;
+
+        // Foldable device preferences
+        config.foldableEnabled = prefs.getBoolean(CHECKBOX_FOLDABLE_ENABLED, DEFAULT_FOLDABLE_ENABLED);
+        config.foldableFlexMode = prefs.getBoolean(CHECKBOX_FOLDABLE_FLEX_MODE, DEFAULT_FOLDABLE_FLEX_MODE);
+        config.foldableAutoResolution = prefs.getBoolean(CHECKBOX_FOLDABLE_AUTO_RESOLUTION, DEFAULT_FOLDABLE_AUTO_RESOLUTION);
+
+        String foldedRes = prefs.getString(FOLDABLE_FOLDED_RESOLUTION_PREF_STRING, DEFAULT_FOLDABLE_FOLDED_RESOLUTION);
+        if (foldedRes.contains("x")) {
+            config.foldableFoldedWidth = getWidthFromResolutionString(foldedRes);
+            config.foldableFoldedHeight = getHeightFromResolutionString(foldedRes);
+        } else {
+            config.foldableFoldedWidth = 1280;
+            config.foldableFoldedHeight = 720;
+        }
+
+        String unfoldedRes = prefs.getString(FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING, DEFAULT_FOLDABLE_UNFOLDED_RESOLUTION);
+        if (unfoldedRes.contains("x")) {
+            config.foldableUnfoldedWidth = getWidthFromResolutionString(unfoldedRes);
+            config.foldableUnfoldedHeight = getHeightFromResolutionString(unfoldedRes);
+        } else {
+            config.foldableUnfoldedWidth = 1920;
+            config.foldableUnfoldedHeight = 1080;
+        }
 
         return config;
     }

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flexModePanel"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:visibility="gone"
+    android:background="#E6000000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Touchpad area - takes all available space -->
+        <View
+            android:id="@+id/flexTouchpadArea"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#1AFFFFFF" />
+
+        <!-- Separator line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#33FFFFFF" />
+
+        <!-- Button bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <!-- Left click button -->
+            <TextView
+                android:id="@+id/flexBtnLeftClick"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:gravity="center"
+                android:text="@string/flex_left_click"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:background="@drawable/flex_panel_button_bg"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Keyboard toggle button -->
+            <ImageButton
+                android:id="@+id/flexBtnKeyboard"
+                android:layout_width="56dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_fullscreen_keyboard"
+                android:background="@drawable/flex_panel_button_bg"
+                android:scaleType="centerInside"
+                android:padding="8dp"
+                android:contentDescription="@string/flex_keyboard"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Right click button -->
+            <TextView
+                android:id="@+id/flexBtnRightClick"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:gravity="center"
+                android:text="@string/flex_right_click"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:background="@drawable/flex_panel_button_bg"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Small touchpad icon hint (centered, semi-transparent) -->
+    <ImageView
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_mouse_move"
+        android:alpha="0.15" />
+
+</FrameLayout>

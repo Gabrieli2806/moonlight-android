@@ -116,4 +116,7 @@
         android:visibility="gone"
         android:elevation="9999dp" />
 
+    <!-- Flex Mode touchpad panel (bottom half, shown during flex mode) -->
+    <include layout="@layout/flex_mode_panel" />
+
 </merge>
