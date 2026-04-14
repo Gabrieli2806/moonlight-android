@@ -46,6 +46,7 @@ public class KeyBoardLayoutController {
     private FrameLayout frame_layout = null;
     private final Handler handler;
     public boolean shown = false;
+    private boolean flexMode = false;
     private final LinearLayout keyboardView;
     private PopupWindow keyPopup;
     private TextView keyPopupText;
@@ -111,6 +112,23 @@ public class KeyBoardLayoutController {
 
     public void setViewCallbacks(ViewCallbacks viewCallbacks) {
         this.viewCallbacks = viewCallbacks;
+    }
+
+    /**
+     * Enable flex mode: keyboard fills its container and the Hide KBD button is removed.
+     */
+    public void setFlexMode(boolean enabled) {
+        this.flexMode = enabled;
+        // Hide or show the "Hide KBD" button
+        for (int i = 0; i < keyboardView.getChildCount(); i++) {
+            LinearLayout row = (LinearLayout) keyboardView.getChildAt(i);
+            for (int j = 0; j < row.getChildCount(); j++) {
+                View child = row.getChildAt(j);
+                if ("hide".equals(child.getTag())) {
+                    child.setVisibility(enabled ? View.GONE : View.VISIBLE);
+                }
+            }
+        }
     }
 
     public Handler getHandler() {
@@ -321,12 +339,15 @@ public class KeyBoardLayoutController {
     public void refreshLayout() {
         frame_layout.removeView(keyboardView);
 
-        int height = 0;
-        int width = 0;
-        int widthPreference = 0;
-        if (prefConfig.onscreenKeyboardAutoFitDisabled) {
+        int height;
+        int width;
+        if (flexMode) {
+            // In flex mode, fill the container completely
+            width = ViewGroup.LayoutParams.MATCH_PARENT;
+            height = ViewGroup.LayoutParams.MATCH_PARENT;
+        } else if (prefConfig.onscreenKeyboardAutoFitDisabled) {
             height = dip2px(context,prefConfig.onscreenKeyboardHeight);
-            widthPreference = prefConfig.onscreenKeyboardWidth;
+            int widthPreference = prefConfig.onscreenKeyboardWidth;
             width = widthPreference == 1000 ? ViewGroup.LayoutParams.MATCH_PARENT : dip2px(context, widthPreference);
         } else {
             DisplayMetrics screen = context.getResources().getDisplayMetrics();
@@ -334,25 +355,29 @@ public class KeyBoardLayoutController {
             height = (int) (screen.heightPixels * 0.5);
         }
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
-        params.gravity = Gravity.BOTTOM;
-        switch (prefConfig.onscreenKeyboardAlignMode) {
-            case "left": {
-                params.gravity |= Gravity.START;
-                break;
-            }
-            case "right": {
-                params.gravity |= Gravity.END;
-                break;
-            }
-            case "center":
-            default: {
-                params.gravity |= Gravity.CENTER_HORIZONTAL;
+        if (flexMode) {
+            params.gravity = Gravity.CENTER;
+        } else {
+            params.gravity = Gravity.BOTTOM;
+            switch (prefConfig.onscreenKeyboardAlignMode) {
+                case "left": {
+                    params.gravity |= Gravity.START;
+                    break;
+                }
+                case "right": {
+                    params.gravity |= Gravity.END;
+                    break;
+                }
+                case "center":
+                default: {
+                    params.gravity |= Gravity.CENTER_HORIZONTAL;
+                }
             }
         }
 
         // params.leftMargin = 20 + buttonSize;
         // params.topMargin = 15;
-        keyboardView.setAlpha(prefConfig.oscKeyboardOpacity / 100f);
+        keyboardView.setAlpha(flexMode ? 1f : prefConfig.oscKeyboardOpacity / 100f);
         frame_layout.addView(keyboardView, params);
     }
 

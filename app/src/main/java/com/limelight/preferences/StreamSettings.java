@@ -193,8 +193,9 @@ public class StreamSettings extends AppCompatActivity {
             pref.setEntryValues(newValues);
         }
 
-        private void addNativeResolutionEntry(int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean portrait, boolean is_custom) {
-            ListPreference pref = (ListPreference) findPreference(PreferenceConfiguration.RESOLUTION_PREF_STRING);
+        private void addNativeResolutionEntryForPref(String prefKey, int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean portrait, boolean is_custom) {
+            ListPreference pref = (ListPreference) findPreference(prefKey);
+            if (pref == null) return;
 
             String newName;
 
@@ -226,10 +227,20 @@ public class StreamSettings extends AppCompatActivity {
                 }
             }
 
-            if (pref.getEntryValues().length < nativeResolutionStartIndex) {
-                nativeResolutionStartIndex = pref.getEntryValues().length;
+            if (prefKey.equals(PreferenceConfiguration.RESOLUTION_PREF_STRING)) {
+                if (pref.getEntryValues().length < nativeResolutionStartIndex) {
+                    nativeResolutionStartIndex = pref.getEntryValues().length;
+                }
             }
             appendPreferenceEntry(pref, newName, newValue);
+        }
+
+        private void addNativeResolutionEntry(int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean portrait, boolean is_custom) {
+            // Add to main resolution list
+            addNativeResolutionEntryForPref(PreferenceConfiguration.RESOLUTION_PREF_STRING, nativeWidth, nativeHeight, insetsRemoved, portrait, is_custom);
+            // Add to foldable resolution lists too
+            addNativeResolutionEntryForPref(PreferenceConfiguration.FOLDABLE_FOLDED_RESOLUTION_PREF_STRING, nativeWidth, nativeHeight, insetsRemoved, portrait, is_custom);
+            addNativeResolutionEntryForPref(PreferenceConfiguration.FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING, nativeWidth, nativeHeight, insetsRemoved, portrait, is_custom);
         }
 
         private void addNativeResolutionEntries(int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean is_custom) {

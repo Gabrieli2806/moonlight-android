@@ -177,6 +177,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private KeyBoardController keyBoardController;
 
     private KeyBoardLayoutController keyBoardLayoutController;
+    private KeyBoardLayoutController flexKeyBoardLayoutController;
 
     private PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
@@ -1223,9 +1224,22 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             params.height = halfHeight;
             streamContainer.setLayoutParams(params);
 
-            // Show touchpad panel in the bottom half
+            boolean useKeyboardMode = prefConfig.foldableFlexKeyboard;
+
+            // Show panel in the bottom half (keyboard+touchpad or touchpad-only)
             if (flexModePanel != null) {
-                flexModePanel.show(halfHeight);
+                flexModePanel.show(halfHeight, useKeyboardMode);
+
+                // If keyboard+touchpad mode, inject keyboard into the panel's container
+                if (useKeyboardMode) {
+                    FrameLayout kbContainer = flexModePanel.getKeyboardContainer();
+                    if (kbContainer != null) {
+                        flexKeyBoardLayoutController = new KeyBoardLayoutController(kbContainer, this, prefConfig);
+                        flexKeyBoardLayoutController.setFlexMode(true);
+                        flexKeyBoardLayoutController.refreshLayout();
+                        flexKeyBoardLayoutController.show();
+                    }
+                }
             }
 
             if (keyBoardLayoutController != null) {
@@ -1246,6 +1260,12 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             params.gravity = Gravity.CENTER;
             params.height = ViewGroup.LayoutParams.MATCH_PARENT;
             streamContainer.setLayoutParams(params);
+
+            // Hide flex keyboard controller if it was active
+            if (flexKeyBoardLayoutController != null) {
+                flexKeyBoardLayoutController.hide(false);
+                flexKeyBoardLayoutController = null;
+            }
 
             // Hide touchpad panel
             if (flexModePanel != null) {
@@ -1276,9 +1296,18 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             && foldableDeviceHelper.isHingeHorizontal());
 
         if (connected && postureChanged && resolutionChanged) {
-            Toast.makeText(this,
-                    getString(R.string.toast_foldable_reconnect_required),
-                    Toast.LENGTH_LONG).show();
+            if (prefConfig.foldableAutoReconnect) {
+                Toast.makeText(this,
+                        getString(R.string.toast_foldable_auto_reconnecting),
+                        Toast.LENGTH_SHORT).show();
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+            } else {
+                Toast.makeText(this,
+                        getString(R.string.toast_foldable_reconnect_required),
+                        Toast.LENGTH_LONG).show();
+            }
         }
     }
 

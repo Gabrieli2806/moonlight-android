@@ -121,8 +121,10 @@ public class PreferenceConfiguration {
     private static final String CHECKBOX_FOLDABLE_ENABLED = "checkbox_foldable_enabled";
     private static final String CHECKBOX_FOLDABLE_FLEX_MODE = "checkbox_foldable_flex_mode";
     private static final String CHECKBOX_FOLDABLE_AUTO_RESOLUTION = "checkbox_foldable_auto_resolution";
-    private static final String FOLDABLE_FOLDED_RESOLUTION_PREF_STRING = "list_foldable_folded_resolution";
-    private static final String FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING = "list_foldable_unfolded_resolution";
+    private static final String CHECKBOX_FOLDABLE_FLEX_KEYBOARD = "checkbox_foldable_flex_keyboard";
+    private static final String CHECKBOX_FOLDABLE_AUTO_RECONNECT = "checkbox_foldable_auto_reconnect";
+    static final String FOLDABLE_FOLDED_RESOLUTION_PREF_STRING = "list_foldable_folded_resolution";
+    static final String FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING = "list_foldable_unfolded_resolution";
 
     //竖屏模式
     private static final String CHECKBOX_AUTO_ORIENTATION = "checkbox_auto_orientation";
@@ -220,6 +222,8 @@ public class PreferenceConfiguration {
     private static final boolean DEFAULT_FOLDABLE_ENABLED = false;
     private static final boolean DEFAULT_FOLDABLE_FLEX_MODE = true;
     private static final boolean DEFAULT_FOLDABLE_AUTO_RESOLUTION = true;
+    private static final boolean DEFAULT_FOLDABLE_FLEX_KEYBOARD = false;
+    private static final boolean DEFAULT_FOLDABLE_AUTO_RECONNECT = false;
     static final String DEFAULT_FOLDABLE_FOLDED_RESOLUTION = "1280x720";
     static final String DEFAULT_FOLDABLE_UNFOLDED_RESOLUTION = "1920x1080";
 
@@ -317,6 +321,8 @@ public class PreferenceConfiguration {
     public boolean foldableEnabled;
     public boolean foldableFlexMode;
     public boolean foldableAutoResolution;
+    public boolean foldableFlexKeyboard;
+    public boolean foldableAutoReconnect;
     public int foldableFoldedWidth, foldableFoldedHeight;
     public int foldableUnfoldedWidth, foldableUnfoldedHeight;
 
@@ -1061,6 +1067,8 @@ private static int getFramePacingValue(Context context) {
         config.foldableEnabled = prefs.getBoolean(CHECKBOX_FOLDABLE_ENABLED, DEFAULT_FOLDABLE_ENABLED);
         config.foldableFlexMode = prefs.getBoolean(CHECKBOX_FOLDABLE_FLEX_MODE, DEFAULT_FOLDABLE_FLEX_MODE);
         config.foldableAutoResolution = prefs.getBoolean(CHECKBOX_FOLDABLE_AUTO_RESOLUTION, DEFAULT_FOLDABLE_AUTO_RESOLUTION);
+        config.foldableFlexKeyboard = prefs.getBoolean(CHECKBOX_FOLDABLE_FLEX_KEYBOARD, DEFAULT_FOLDABLE_FLEX_KEYBOARD);
+        config.foldableAutoReconnect = prefs.getBoolean(CHECKBOX_FOLDABLE_AUTO_RECONNECT, DEFAULT_FOLDABLE_AUTO_RECONNECT);
 
         String foldedRes = prefs.getString(FOLDABLE_FOLDED_RESOLUTION_PREF_STRING, DEFAULT_FOLDABLE_FOLDED_RESOLUTION);
         if (foldedRes.contains("x")) {

@@ -241,6 +241,22 @@
             android:title="@string/title_foldable_auto_resolution"
             app:iconSpaceReserved="false" />
 
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:key="checkbox_foldable_auto_reconnect"
+            android:summary="@string/summary_foldable_auto_reconnect"
+            android:title="@string/title_foldable_auto_reconnect"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="checkbox_foldable_flex_mode"
+            android:key="checkbox_foldable_flex_keyboard"
+            android:summary="@string/summary_foldable_flex_keyboard"
+            android:title="@string/title_foldable_flex_keyboard"
+            app:iconSpaceReserved="false" />
+
         <ListPreference
             android:defaultValue="1280x720"
             android:dependency="checkbox_foldable_auto_resolution"

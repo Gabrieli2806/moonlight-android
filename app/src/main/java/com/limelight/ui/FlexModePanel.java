@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -18,8 +19,9 @@ import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.input.MouseButtonPacket;
 
 /**
- * Manages the Flex Mode bottom panel which provides a mouse touchpad area
- * and buttons for left/right click and keyboard toggle.
+ * Manages the Flex Mode bottom panel. Supports two modes:
+ * 1. Touchpad-only: full touchpad with left/right click buttons and keyboard toggle
+ * 2. Keyboard+Touchpad: 75% keyboard + 25% touchpad strip with mouse buttons
  */
 public class FlexModePanel {
 
@@ -36,16 +38,32 @@ public class FlexModePanel {
     private final Activity activity;
     private final NvConnection conn;
     private final KeyboardToggleCallback keyboardCallback;
+    private final SharedPreferences prefs;
+    private int preferredKeyboardType;
+
+    // Root panel
     private final View panelRoot;
+
+    // Mode 1: Touchpad-only views
+    private final View touchpadOnlyGroup;
     private final View touchpadArea;
     private final TextView btnLeftClick;
     private final ImageButton btnKeyboard;
     private final TextView btnRightClick;
-    private final SharedPreferences prefs;
+    private final ImageView touchpadHint;
 
-    private int preferredKeyboardType;
+    // Mode 2: Keyboard+Touchpad views
+    private final View keyboardTouchpadGroup;
+    private final FrameLayout keyboardContainer;
+    private final View kbTouchpadArea;
+    private final TextView kbBtnLeftClick;
+    private final TextView kbBtnRightClick;
 
-    private final TrackpadContext[] trackpadContexts = new TrackpadContext[2];
+    // Trackpad contexts for each mode
+    private TrackpadContext[] touchpadContexts = new TrackpadContext[2];
+    private TrackpadContext[] kbTouchpadContexts = new TrackpadContext[2];
+
+    private boolean keyboardMode = false;
 
     public FlexModePanel(Activity activity, NvConnection conn, KeyboardToggleCallback keyboardCallback) {
         this.activity = activity;
@@ -55,31 +73,56 @@ public class FlexModePanel {
         prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         preferredKeyboardType = prefs.getInt(PREF_KEYBOARD_TYPE, KEYBOARD_SOFT);
 
+        // Root
         panelRoot = activity.findViewById(R.id.flexModePanel);
+
+        // Mode 1 views
+        touchpadOnlyGroup = activity.findViewById(R.id.flexTouchpadOnlyGroup);
         touchpadArea = activity.findViewById(R.id.flexTouchpadArea);
         btnLeftClick = activity.findViewById(R.id.flexBtnLeftClick);
         btnKeyboard = activity.findViewById(R.id.flexBtnKeyboard);
         btnRightClick = activity.findViewById(R.id.flexBtnRightClick);
+        touchpadHint = activity.findViewById(R.id.flexTouchpadHint);
 
-        for (int i = 0; i < trackpadContexts.length; i++) {
-            trackpadContexts[i] = new TrackpadContext(conn, i);
+        // Mode 2 views
+        keyboardTouchpadGroup = activity.findViewById(R.id.flexKeyboardTouchpadGroup);
+        keyboardContainer = activity.findViewById(R.id.flexKeyboardContainer);
+        kbTouchpadArea = activity.findViewById(R.id.flexKbTouchpadArea);
+        kbBtnLeftClick = activity.findViewById(R.id.flexKbBtnLeftClick);
+        kbBtnRightClick = activity.findViewById(R.id.flexKbBtnRightClick);
+
+        resetTouchpadContexts();
+        resetKbTouchpadContexts();
+
+        setupTouchpad(touchpadArea, true);
+        setupTouchpad(kbTouchpadArea, false);
+        setupMouseButtons(btnLeftClick, btnRightClick);
+        setupMouseButtons(kbBtnLeftClick, kbBtnRightClick);
+        setupKeyboardButton();
+    }
+
+    private void resetTouchpadContexts() {
+        for (int i = 0; i < touchpadContexts.length; i++) {
+            touchpadContexts[i] = new TrackpadContext(conn, i);
         }
+    }
 
-        setupTouchpad();
-        setupButtons();
+    private void resetKbTouchpadContexts() {
+        for (int i = 0; i < kbTouchpadContexts.length; i++) {
+            kbTouchpadContexts[i] = new TrackpadContext(conn, i);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void setupTouchpad() {
-        touchpadArea.setOnTouchListener((v, event) -> {
-            if (conn == null) {
-                return false;
-            }
-            return handleTouchpadEvent(event);
+    private void setupTouchpad(View area, boolean isPrimary) {
+        area.setOnTouchListener((v, event) -> {
+            if (conn == null) return false;
+            TrackpadContext[] contexts = isPrimary ? touchpadContexts : kbTouchpadContexts;
+            return handleTouchpadEvent(event, contexts, isPrimary);
         });
     }
 
-    private boolean handleTouchpadEvent(MotionEvent event) {
+    private boolean handleTouchpadEvent(MotionEvent event, TrackpadContext[] contexts, boolean isPrimary) {
         int actionIndex = event.getActionIndex();
         int eventX = (int) event.getX(actionIndex);
         int eventY = (int) event.getY(actionIndex);
@@ -88,12 +131,11 @@ public class FlexModePanel {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN: {
-                if (actionIndex < trackpadContexts.length) {
-                    // Update pointer count for all contexts
-                    for (TrackpadContext ctx : trackpadContexts) {
+                if (actionIndex < contexts.length) {
+                    for (TrackpadContext ctx : contexts) {
                         ctx.setPointerCount(event.getPointerCount());
                     }
-                    trackpadContexts[actionIndex].touchDownEvent(
+                    contexts[actionIndex].touchDownEvent(
                             eventX, eventY, eventTime,
                             event.getActionMasked() == MotionEvent.ACTION_DOWN);
                 }
@@ -101,12 +143,11 @@ public class FlexModePanel {
             }
 
             case MotionEvent.ACTION_MOVE: {
-                // Handle move events for all active pointers
-                for (int i = 0; i < event.getPointerCount() && i < trackpadContexts.length; i++) {
+                for (int i = 0; i < event.getPointerCount() && i < contexts.length; i++) {
                     int x = (int) event.getX(i);
                     int y = (int) event.getY(i);
-                    if (!trackpadContexts[i].isCancelled()) {
-                        trackpadContexts[i].touchMoveEvent(x, y, eventTime);
+                    if (!contexts[i].isCancelled()) {
+                        contexts[i].touchMoveEvent(x, y, eventTime);
                     }
                 }
                 return true;
@@ -114,41 +155,34 @@ public class FlexModePanel {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP: {
-                if (actionIndex < trackpadContexts.length) {
-                    trackpadContexts[actionIndex].touchUpEvent(eventX, eventY, eventTime);
-                    // Update pointer count
-                    for (TrackpadContext ctx : trackpadContexts) {
+                if (actionIndex < contexts.length) {
+                    contexts[actionIndex].touchUpEvent(eventX, eventY, eventTime);
+                    for (TrackpadContext ctx : contexts) {
                         ctx.setPointerCount(event.getPointerCount() - 1);
                     }
                 }
-
-                // Reset contexts on final finger up
                 if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-                    for (int i = 0; i < trackpadContexts.length; i++) {
-                        trackpadContexts[i] = new TrackpadContext(conn, i);
-                    }
+                    if (isPrimary) resetTouchpadContexts();
+                    else resetKbTouchpadContexts();
                 }
                 return true;
             }
 
             case MotionEvent.ACTION_CANCEL: {
-                for (TrackpadContext ctx : trackpadContexts) {
+                for (TrackpadContext ctx : contexts) {
                     ctx.cancelTouch();
                 }
-                for (int i = 0; i < trackpadContexts.length; i++) {
-                    trackpadContexts[i] = new TrackpadContext(conn, i);
-                }
+                if (isPrimary) resetTouchpadContexts();
+                else resetKbTouchpadContexts();
                 return true;
             }
         }
-
         return false;
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void setupButtons() {
-        // Left click - press on down, release on up
-        btnLeftClick.setOnTouchListener((v, event) -> {
+    private void setupMouseButtons(TextView leftBtn, TextView rightBtn) {
+        leftBtn.setOnTouchListener((v, event) -> {
             if (conn == null) return false;
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
@@ -164,8 +198,7 @@ public class FlexModePanel {
             return false;
         });
 
-        // Right click - press on down, release on up
-        btnRightClick.setOnTouchListener((v, event) -> {
+        rightBtn.setOnTouchListener((v, event) -> {
             if (conn == null) return false;
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
@@ -180,12 +213,10 @@ public class FlexModePanel {
             }
             return false;
         });
+    }
 
-        // Keyboard button: tap = use preferred, long-press = choose type
-        btnKeyboard.setOnClickListener(v -> {
-            togglePreferredKeyboard();
-        });
-
+    private void setupKeyboardButton() {
+        btnKeyboard.setOnClickListener(v -> togglePreferredKeyboard());
         btnKeyboard.setOnLongClickListener(v -> {
             showKeyboardTypePopup(v);
             return true;
@@ -194,7 +225,6 @@ public class FlexModePanel {
 
     private void togglePreferredKeyboard() {
         if (keyboardCallback == null) return;
-
         if (preferredKeyboardType == KEYBOARD_FULL) {
             LimeLog.info("Flex Mode: toggling full keyboard (preferred)");
             keyboardCallback.onToggleFullKeyboard();
@@ -208,8 +238,6 @@ public class FlexModePanel {
         PopupMenu popup = new PopupMenu(activity, anchor);
         popup.getMenu().add(0, KEYBOARD_SOFT, 0, R.string.flex_keyboard_soft);
         popup.getMenu().add(0, KEYBOARD_FULL, 1, R.string.flex_keyboard_full);
-
-        // Mark current preference
         popup.getMenu().findItem(preferredKeyboardType).setChecked(true);
 
         popup.setOnMenuItemClickListener(item -> {
@@ -217,8 +245,6 @@ public class FlexModePanel {
             preferredKeyboardType = type;
             prefs.edit().putInt(PREF_KEYBOARD_TYPE, type).apply();
             LimeLog.info("Flex Mode: keyboard preference set to " + (type == KEYBOARD_FULL ? "full" : "soft"));
-
-            // Immediately toggle the selected keyboard
             if (keyboardCallback != null) {
                 if (type == KEYBOARD_FULL) {
                     keyboardCallback.onToggleFullKeyboard();
@@ -228,12 +254,23 @@ public class FlexModePanel {
             }
             return true;
         });
-
         popup.show();
     }
 
+    /**
+     * Show the panel in touchpad-only mode.
+     */
     public void show(int bottomHalfHeight) {
+        show(bottomHalfHeight, false);
+    }
+
+    /**
+     * Show the panel. If useKeyboardMode is true, shows keyboard+touchpad split.
+     */
+    public void show(int bottomHalfHeight, boolean useKeyboardMode) {
         if (panelRoot == null) return;
+
+        this.keyboardMode = useKeyboardMode;
 
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) panelRoot.getLayoutParams();
         params.height = bottomHalfHeight;
@@ -241,17 +278,38 @@ public class FlexModePanel {
         panelRoot.setLayoutParams(params);
         panelRoot.setVisibility(View.VISIBLE);
 
-        LimeLog.info("Flex Mode: panel shown, height=" + bottomHalfHeight);
+        if (useKeyboardMode) {
+            touchpadOnlyGroup.setVisibility(View.GONE);
+            keyboardTouchpadGroup.setVisibility(View.VISIBLE);
+            if (touchpadHint != null) touchpadHint.setVisibility(View.GONE);
+            LimeLog.info("Flex Mode: panel shown in keyboard+touchpad mode, height=" + bottomHalfHeight);
+        } else {
+            touchpadOnlyGroup.setVisibility(View.VISIBLE);
+            keyboardTouchpadGroup.setVisibility(View.GONE);
+            if (touchpadHint != null) touchpadHint.setVisibility(View.VISIBLE);
+            LimeLog.info("Flex Mode: panel shown in touchpad-only mode, height=" + bottomHalfHeight);
+        }
     }
 
     public void hide() {
         if (panelRoot == null) return;
-
         panelRoot.setVisibility(View.GONE);
+        keyboardMode = false;
         LimeLog.info("Flex Mode: panel hidden");
     }
 
     public boolean isVisible() {
         return panelRoot != null && panelRoot.getVisibility() == View.VISIBLE;
+    }
+
+    public boolean isKeyboardMode() {
+        return keyboardMode;
+    }
+
+    /**
+     * Returns the FrameLayout container where the KeyBoardLayoutController should inject its keyboard.
+     */
+    public FrameLayout getKeyboardContainer() {
+        return keyboardContainer;
     }
 }

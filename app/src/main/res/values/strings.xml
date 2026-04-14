@@ -509,11 +509,16 @@
     <string name="summary_foldable_flex_mode">When the device is half-opened, keep the stream on the top half and move the full keyboard to the bottom area.</string>
     <string name="title_foldable_auto_resolution">Auto Switch Foldable Resolution</string>
     <string name="summary_foldable_auto_resolution">Use one streaming resolution when the device is folded and another when it is unfolded, so you do not need to change it manually.</string>
+    <string name="title_foldable_flex_keyboard">Keyboard + Touchpad Mode</string>
+    <string name="summary_foldable_flex_keyboard">In Flex Mode, show the full on-screen keyboard (75%%) and a mouse touchpad (25%%) in the bottom half.</string>
+    <string name="title_foldable_auto_reconnect">Auto Reconnect on Fold Change</string>
+    <string name="summary_foldable_auto_reconnect">Automatically reconnect the stream when the fold state changes to apply the new resolution.</string>
     <string name="title_foldable_folded_resolution">Folded Resolution</string>
     <string name="summary_foldable_folded_resolution">Resolution to prefer when the device is folded or using the narrow front screen.</string>
     <string name="title_foldable_unfolded_resolution">Unfolded Resolution</string>
     <string name="summary_foldable_unfolded_resolution">Resolution to prefer when the device is fully open or in Flex Mode.</string>
     <string name="toast_foldable_reconnect_required">Fold state changed. Restart the stream to apply the new resolution.</string>
+    <string name="toast_foldable_auto_reconnecting">Fold state changed. Reconnecting with new resolution…</string>
     <string name="flex_left_click">Left Click</string>
     <string name="flex_right_click">Right Click</string>
     <string name="flex_keyboard">Toggle Keyboard</string>
