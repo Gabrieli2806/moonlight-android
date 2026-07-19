@@ -138,6 +138,12 @@ public class PreferenceConfiguration {
 
     private static final String CHECKBOX_ENABLE_COMMIT_TEXT = "checkbox_enable_commit_text";
 
+    // Foldable devices
+    private static final String CHECKBOX_FOLD_TABLETOP_MODE = "checkbox_fold_tabletop_mode";
+    private static final String CHECKBOX_FOLD_KEYBOARD_AVOIDANCE = "checkbox_fold_keyboard_avoidance";
+    private static final boolean DEFAULT_FOLD_TABLETOP_MODE = true;
+    private static final boolean DEFAULT_FOLD_KEYBOARD_AVOIDANCE = true;
+
     static final String DEFAULT_RESOLUTION = "1280x720";
     static final String DEFAULT_FPS = "60";
     private static final boolean DEFAULT_ENABLE_ULTRA_LOW_LATENCY = false;
@@ -291,6 +297,8 @@ public class PreferenceConfiguration {
     public boolean autoOrientation;
     //虚拟屏幕键盘按键
     public boolean enableKeyboard;
+    public boolean foldTabletopMode;
+    public boolean foldKeyboardAvoidance;
     //修复JoyCon十字键
     public boolean enableJoyConFix;
 
@@ -945,6 +953,9 @@ private static int getFramePacingValue(Context context) {
         config.resumeWithoutConfirm = prefs.getBoolean(RESUME_WITHOUT_CONFIRM_PREF_STRING, DEFAULT_RESUME_WITHOUT_CONFIRM);
 
         config.enableKeyboard = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD,false);
+
+        config.foldTabletopMode = prefs.getBoolean(CHECKBOX_FOLD_TABLETOP_MODE, DEFAULT_FOLD_TABLETOP_MODE);
+        config.foldKeyboardAvoidance = prefs.getBoolean(CHECKBOX_FOLD_KEYBOARD_AVOIDANCE, DEFAULT_FOLD_KEYBOARD_AVOIDANCE);
 
         config.enableKeyboardVibrate = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD_VIBRATE,false);
         //兼容joycon手柄

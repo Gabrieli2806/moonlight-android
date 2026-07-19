@@ -483,6 +483,24 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:key="category_foldable_settings"
+        android:title="@string/category_foldable_settings"
+        app:iconSpaceReserved="false">
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_fold_tabletop_mode"
+            android:summary="@string/summary_fold_tabletop_mode"
+            android:title="@string/title_fold_tabletop_mode"
+            app:iconSpaceReserved="false" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_fold_keyboard_avoidance"
+            android:summary="@string/summary_fold_keyboard_avoidance"
+            android:title="@string/title_fold_keyboard_avoidance"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="@string/category_host_settings"
         app:iconSpaceReserved="false">
         <CheckBoxPreference

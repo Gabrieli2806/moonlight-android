@@ -149,6 +149,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private final TouchContext[] touchContextMap = new TouchContext[2];
     private final TouchContext[] trackpadContextMap = new TouchContext[2];
     private PanZoomHandler panZoomHandler;
+    private com.limelight.utils.FoldableHelper foldableHelper;
     private long threeFingerDownTime = 0;
     private long fourFingerDownTime = 0;
     private long fiveFingerDownTime = 0;
@@ -462,6 +463,13 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         streamContainer.setOnKeyListener(this);
         streamContainer.setInputCallbacks(this);
         streamContainer.setCommitTextEnabled(prefConfig.enableCommitText);
+
+        // Foldable QoL features (tabletop mode, keyboard avoidance)
+        if (prefConfig.foldTabletopMode || prefConfig.foldKeyboardAvoidance) {
+            foldableHelper = new com.limelight.utils.FoldableHelper(this, streamContainer,
+                    prefConfig.foldTabletopMode, prefConfig.foldKeyboardAvoidance);
+            foldableHelper.register();
+        }
 
         rootView = streamContainer.getParent();
 
@@ -1704,6 +1712,10 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
 
         instance = null;
         timerHandler.removeCallbacksAndMessages(null);
+
+        if (foldableHelper != null) {
+            foldableHelper.unregister();
+        }
 
         if (prefConfig.enableFullExDisplay) handleDisplayRemoved();
 

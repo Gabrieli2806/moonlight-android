@@ -294,4 +294,9 @@
     <string name="title_checkbox_remember_zoom_pan">Recordar zoom y desplazamiento</string>
     <string name="summary_checkbox_remember_zoom_pan">Guarda la posición de zoom y desplazamiento entre sesiones.</string>
     <string name="title_edit_profile">Editar perfil</string>
+    <string name="category_foldable_settings">Dispositivos plegables</string>
+    <string name="title_fold_tabletop_mode">Modo tabletop</string>
+    <string name="summary_fold_tabletop_mode">Cuando el dispositivo está medio plegado (modo Flex), el vídeo se coloca en la mitad superior de la pantalla para poder usar la mitad inferior con los controles en pantalla o el teclado.</string>
+    <string name="title_fold_keyboard_avoidance">Mantener el vídeo encima del teclado</string>
+    <string name="summary_fold_keyboard_avoidance">Cuando el teclado en pantalla está abierto, el vídeo se reduce para caber encima de él y así poder seguir viendo el stream mientras escribes.</string>
 </resources>
