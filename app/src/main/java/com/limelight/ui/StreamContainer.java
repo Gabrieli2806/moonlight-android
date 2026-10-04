@@ -52,6 +52,9 @@ public class StreamContainer extends FrameLayout implements SurfaceHolder.Callba
 
     private double desiredAspectRatio;
     private boolean fillDisplay = false;
+    private boolean splitActive = false;
+    private double splitAspectRatio;
+    private double splitContentAspectRatio;
 
     private boolean isSurfaceReady = false;
 
@@ -110,12 +113,37 @@ public class StreamContainer extends FrameLayout implements SurfaceHolder.Callba
         requestLayout();
     }
 
+    // While split (e.g. sharing the screen with a keyboard), the stream is always
+    // letterboxed into the remaining area regardless of the configured scale mode.
+    // contentAspectRatio is the aspect ratio of the picture inside the video. If it's wider
+    // than the video itself (host letterboxing), the view is sized so the picture fits the
+    // available area and the black bars overflow it.
+    public void setSplitMode(boolean active, double aspectRatio, double contentAspectRatio) {
+        this.splitActive = active;
+        this.splitAspectRatio = aspectRatio;
+        this.splitContentAspectRatio = contentAspectRatio;
+        requestLayout();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (renderMode != StreamMode.MODE_2D) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             return;
         }
+
+        if (splitActive) {
+            int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+            int availableHeight = MeasureSpec.getSize(heightMeasureSpec);
+            int splitWidth = Math.min(availableWidth, (int)(availableHeight * splitContentAspectRatio));
+            int splitHeight = (int)(splitWidth / splitAspectRatio);
+
+            setMeasuredDimension(splitWidth, splitHeight);
+            measureChildren(MeasureSpec.makeMeasureSpec(splitWidth, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(splitHeight, MeasureSpec.EXACTLY));
+            return;
+        }
+
         if (desiredAspectRatio == 0) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             return;

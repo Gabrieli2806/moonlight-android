@@ -46,6 +46,7 @@ public class KeyBoardLayoutController {
     private FrameLayout frame_layout = null;
     private final Handler handler;
     public boolean shown = false;
+    private int autoFitHeight = 0;
     private final LinearLayout keyboardView;
     private PopupWindow keyPopup;
     private TextView keyPopupText;
@@ -280,6 +281,24 @@ public class KeyBoardLayoutController {
         return keyboardView.getVisibility() == View.VISIBLE;
     }
 
+    public int getVisibleHeight() {
+        return isKeyboardVisible() ? keyboardView.getHeight() : 0;
+    }
+
+    // Overrides the auto-fit height (in pixels). Ignored if the user set a custom keyboard size.
+    public void setAutoFitHeight(int height) {
+        if (prefConfig.onscreenKeyboardAutoFitDisabled || height <= 0 || height == autoFitHeight) {
+            return;
+        }
+        autoFitHeight = height;
+
+        ViewGroup.LayoutParams params = keyboardView.getLayoutParams();
+        if (params != null) {
+            params.height = height;
+            keyboardView.setLayoutParams(params);
+        }
+    }
+
     public void hide(boolean temporary) {
         if (prefConfig.enableKeyboardVibrate) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -331,7 +350,7 @@ public class KeyBoardLayoutController {
         } else {
             DisplayMetrics screen = context.getResources().getDisplayMetrics();
             width = screen.widthPixels;
-            height = (int) (screen.heightPixels * 0.5);
+            height = autoFitHeight > 0 ? autoFitHeight : (int) (screen.heightPixels * 0.5);
         }
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
         params.gravity = Gravity.BOTTOM;

@@ -45,9 +45,11 @@ import com.limelight.ui.GameGestures;
 import com.limelight.ui.StreamContainer;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.ExternalDisplayControlActivity;
+import com.limelight.utils.FoldSplitHelper;
 import com.limelight.utils.MouseModeOption;
 import com.limelight.utils.PanZoomHandler;
 import com.limelight.utils.PerformanceDataTracker;
+import com.limelight.utils.RearTouchpad;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.SpinnerDialog;
@@ -207,6 +209,8 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private boolean waitingForAllModifiersUp = false;
     private int specialKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private StreamContainer streamContainer;
+    private FoldSplitHelper foldSplitHelper;
+    private RearTouchpad rearTouchpad;
     private long synthTouchDownTime = 0;
 
     private boolean pendingDrag = false;
@@ -470,6 +474,38 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) streamContainer.getLayoutParams();
             params.gravity = Gravity.CENTER_HORIZONTAL|Gravity.TOP;
         }
+
+        // Share the screen between the stream and the keyboard/hinge on foldables
+        if (!onExternelDisplay) {
+            foldSplitHelper = new FoldSplitHelper(this, streamContainer, (View) rootView, prefConfig,
+                    new FoldSplitHelper.Host() {
+                        @Override
+                        public int getOverlayKeyboardHeight() {
+                            return keyBoardLayoutController != null ? keyBoardLayoutController.getVisibleHeight() : 0;
+                        }
+
+                        @Override
+                        public void setOverlayKeyboardHeight(int height) {
+                            if (keyBoardLayoutController != null) {
+                                keyBoardLayoutController.setAutoFitHeight(height);
+                            }
+                        }
+
+                        @Override
+                        public double getStreamAspectRatio() {
+                            return (double) displayWidth / (double) displayHeight;
+                        }
+
+                        @Override
+                        public boolean isSplitSuspended() {
+                            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode();
+                        }
+                    });
+            foldSplitHelper.start();
+
+            rearTouchpad = new RearTouchpad(this);
+        }
+
         // Listen for touch events on the background touch view to enable trackpad mode
         // to work on areas outside of the StreamView itself. We use a separate View
         // for this rather than just handling it at the Activity level, because that
@@ -1119,6 +1155,16 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         keyBoardController.toggleVisibility();
     }
 
+    public boolean isRearTouchpadActive() {
+        return rearTouchpad != null && rearTouchpad.isActive();
+    }
+
+    public void toggleRearTouchpad() {
+        if (rearTouchpad != null) {
+            rearTouchpad.toggle();
+        }
+    }
+
     public void toggleFullKeyboard() {
         if (isOnExternalDisplay()) {
             ExternalDisplayControlActivity.toggleFullKeyboard();
@@ -1302,6 +1348,12 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         int top = viewLocation[1];
         int width = view.getWidth();
         int height = view.getHeight();
+        if (view == streamContainer && foldSplitHelper != null && foldSplitHelper.isCroppingLetterbox()) {
+            // Only show the picture inside the video, not the host's letterboxing
+            int contentHeight = Math.min(height, (int)(width / foldSplitHelper.getContentAspectRatio()));
+            top += (height - contentHeight) / 2;
+            height = contentHeight;
+        }
         Rational aspectRatio = new Rational(width, height);
         hint = new Rect(left, top, left + width, top + height);
 
@@ -1701,6 +1753,13 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        if (foldSplitHelper != null) {
+            foldSplitHelper.stop();
+        }
+        if (rearTouchpad != null) {
+            rearTouchpad.stop();
+        }
 
         instance = null;
         timerHandler.removeCallbacksAndMessages(null);

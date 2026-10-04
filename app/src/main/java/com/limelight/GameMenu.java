@@ -317,6 +317,11 @@ public class GameMenu implements Game.GameMenuCallbacks {
         options.add(new MenuOption(getString(R.string.game_menu_toggle_keyboard), true,
                 game::toggleKeyboard));
 
+        if (!game.isOnExternalDisplay()) {
+            options.add(new MenuOption(getString(game.isRearTouchpadActive() ? R.string.game_menu_disable_rear_touchpad : R.string.game_menu_enable_rear_touchpad), true,
+                    game::toggleRearTouchpad));
+        }
+
         options.add(new MenuOption(getString(game.isZoomModeEnabled() ? R.string.game_menu_disable_zoom_mode : R.string.game_menu_enable_zoom_mode), true,
                 game::toggleZoomMode));
 

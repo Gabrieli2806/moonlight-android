@@ -106,6 +106,27 @@
             android:title="@string/title_top_center_display"
             app:iconSpaceReserved="false" />
 
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_keyboard_split_screen"
+            android:summary="@string/summary_keyboard_split_screen"
+            android:title="@string/title_keyboard_split_screen"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_flex_mode_split"
+            android:summary="@string/summary_flex_mode_split"
+            android:title="@string/title_flex_mode_split"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_split_crop_letterbox"
+            android:summary="@string/summary_split_crop_letterbox"
+            android:title="@string/title_split_crop_letterbox"
+            app:iconSpaceReserved="false" />
+
         <com.limelight.preferences.SeekBarPreference
             android:defaultValue="100"
             android:dialogMessage=""

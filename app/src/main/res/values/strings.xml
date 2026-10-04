@@ -368,6 +368,12 @@
 
     <!-- In Game menu -->
     <string name="game_menu_toggle_keyboard">Show soft keyboard</string>
+    <string name="game_menu_enable_rear_touchpad">Enable rear screen touchpad</string>
+    <string name="game_menu_disable_rear_touchpad">Disable rear screen touchpad</string>
+    <string name="rear_touchpad_label">Rear touchpad</string>
+    <string name="rear_touchpad_enabled">Rear screen touchpad enabled</string>
+    <string name="rear_touchpad_unavailable">Rear screen is not available right now. Unfold the device and try again.</string>
+    <string name="rear_touchpad_unsupported">This device does not let apps use the rear screen.</string>
     <string name="game_menu_toggle_hud">Toggle Performance Overlay</string>
     <string name="game_menu_toggle_floating_button">Toggle Floating Button</string>
     <string name="game_menu_select_mouse_mode">Select Mouse mode</string>
@@ -503,6 +509,12 @@
     <string name="title_fullexdisplay_mode">Fully External Display Mode (Beta)</string>
     <string name="summary_exdisplay_mode">Stream display on the monitor, virtual buttons and performance information and other controls on the phone screen.</string>
     <string name="summary_fullexdisplay_mode">Allows full immersive secondary screen mode with automatically matched refresh rate and resolution. Manual settings won\'t apply in this mode.</string>
+    <string name="title_keyboard_split_screen">Split screen with keyboard</string>
+    <string name="summary_keyboard_split_screen">Shrink the stream into the area above the keyboard instead of letting the keyboard cover it. Best on foldables and tablets.</string>
+    <string name="title_flex_mode_split">Flex mode (half-folded)</string>
+    <string name="summary_flex_mode_split">When a foldable is half-folded, show the stream on the top half and use the bottom half as a trackpad and keyboard area.</string>
+    <string name="title_split_crop_letterbox">Crop black bars in split screen and PiP</string>
+    <string name="summary_split_crop_letterbox">When streaming a near-square resolution (such as Native on an unfolded foldable) from a 16:9 monitor, crop the black bars added by the host so only the picture is shown while split or in picture-in-picture. Disable if your host display really has that shape.</string>
     <string name="title_top_center_display">Display in Top Center</string>
     <string name="summary_top_center_display">Streaming picture will be aligned to the top of the screen instead of centered when resolution is not native.</string>
     <string name="title_touch_sensitivity">Touch Screen Sensitivity</string>

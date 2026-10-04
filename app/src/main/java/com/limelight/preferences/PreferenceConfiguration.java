@@ -305,6 +305,11 @@ public class PreferenceConfiguration {
     //串流画面顶部居中显示
     public boolean alignDisplayTopCenter;
 
+    // Foldables: shrink the stream above the keyboard / hinge instead of covering it
+    public boolean keyboardSplitScreen;
+    public boolean flexModeSplit;
+    public boolean splitCropLetterbox;
+
     //触控屏幕灵敏度
     public int touchSensitivityX;
     public int touchSensitivityY;
@@ -969,6 +974,9 @@ private static int getFramePacingValue(Context context) {
         config.enableFullExDisplay=prefs.getBoolean("checkbox_enable_fullexdisplay",false);
 
         config.alignDisplayTopCenter =prefs.getBoolean("checkbox_enable_view_top_center",false);
+        config.keyboardSplitScreen = prefs.getBoolean("checkbox_keyboard_split_screen", true);
+        config.flexModeSplit = prefs.getBoolean("checkbox_flex_mode_split", true);
+        config.splitCropLetterbox = prefs.getBoolean("checkbox_split_crop_letterbox", true);
 
         config.touchSensitivityX =prefs.getInt(SEEKBAR_TOUCH_SENSITIVITY,100);
 
