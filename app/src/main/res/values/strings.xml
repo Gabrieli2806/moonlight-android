@@ -258,11 +258,18 @@
     <string name="title_checkbox_mouse_nav_buttons">Enable forward/back mouse buttons</string>
     <string name="summary_checkbox_mouse_nav_buttons">Enabling this option may break right clicking on some buggy devices</string>
 
-    <string name="category_foldable_settings">Foldable Devices</string>
-    <string name="title_fold_tabletop_mode">Tabletop mode</string>
-    <string name="summary_fold_tabletop_mode">When the device is half-folded (Flex mode), the video moves to the top half of the screen so you can use the bottom half for on-screen controls or the keyboard.</string>
     <string name="title_fold_keyboard_avoidance">Keep video above keyboard</string>
-    <string name="summary_fold_keyboard_avoidance">When the on-screen keyboard is open, the video shrinks to fit above it so you can keep watching the stream while typing.</string>
+    <string name="summary_fold_keyboard_avoidance">When the on-screen keyboard is open, the video resizes to fit above it so you can keep watching the stream while typing.</string>
+
+    <string name="title_cover_screen_buttons_enable">Cover screen buttons</string>
+    <string name="summary_cover_screen_buttons">Show a customizable button pad on the outer (cover) screen while streaming on the main screen. Requires a device that supports dual-screen mode.</string>
+    <string name="title_cover_screen_buttons">Customize cover screen buttons</string>
+    <string name="summary_cover_screen_buttons_config">Choose which keys the cover screen buttons send.</string>
+    <string name="cover_screen_slot_label">Button %1$d: %2$s</string>
+    <string name="cover_screen_pick_key">Pick a key</string>
+    <string name="cover_screen_clear_slot">(empty)</string>
+    <string name="cover_screen_save">Save</string>
+    <string name="cover_screen_toggle">Toggle cover screen buttons</string>
 
     <string name="category_on_screen_controls_settings">On-screen Controls Settings</string>
     <string name="title_checkbox_show_onscreen_controls">Show on-screen controls</string>
@@ -509,6 +516,28 @@
     <string name="title_fullexdisplay_mode">Fully External Display Mode (Beta)</string>
     <string name="summary_exdisplay_mode">Stream display on the monitor, virtual buttons and performance information and other controls on the phone screen.</string>
     <string name="summary_fullexdisplay_mode">Allows full immersive secondary screen mode with automatically matched refresh rate and resolution. Manual settings won\'t apply in this mode.</string>
+    <string name="title_foldable_enabled">Enable Foldable Enhancements</string>
+    <string name="summary_foldable_enabled">Enable fold posture detection and fold-aware streaming behavior for devices like the Galaxy Z Fold.</string>
+    <string name="title_foldable_flex_mode">Enable Flex Mode Layout</string>
+    <string name="summary_foldable_flex_mode">When the device is half-opened, keep the stream on the top half and move the full keyboard to the bottom area.</string>
+    <string name="title_foldable_auto_resolution">Auto Switch Foldable Resolution</string>
+    <string name="summary_foldable_auto_resolution">Use one streaming resolution when the device is folded and another when it is unfolded, so you do not need to change it manually.</string>
+    <string name="title_foldable_flex_keyboard">Keyboard + Touchpad Mode</string>
+    <string name="summary_foldable_flex_keyboard">In Flex Mode, show the full on-screen keyboard (75%%) and a mouse touchpad (25%%) in the bottom half.</string>
+    <string name="title_foldable_auto_reconnect">Auto Reconnect on Fold Change</string>
+    <string name="summary_foldable_auto_reconnect">Automatically reconnect the stream when the fold state changes to apply the new resolution.</string>
+    <string name="title_foldable_folded_resolution">Folded Resolution</string>
+    <string name="summary_foldable_folded_resolution">Resolution to prefer when the device is folded or using the narrow front screen.</string>
+    <string name="title_foldable_unfolded_resolution">Unfolded Resolution</string>
+    <string name="summary_foldable_unfolded_resolution">Resolution to prefer when the device is fully open or in Flex Mode.</string>
+    <string name="toast_foldable_reconnect_required">Fold state changed. Restart the stream to apply the new resolution.</string>
+    <string name="toast_foldable_auto_reconnecting">Fold state changed. Reconnecting with new resolution…</string>
+    <string name="flex_left_click">Left Click</string>
+    <string name="flex_right_click">Right Click</string>
+    <string name="flex_keyboard">Toggle Keyboard</string>
+    <string name="flex_keyboard_soft">System Keyboard</string>
+    <string name="flex_keyboard_full">Full On-Screen Keyboard</string>
+    <string name="flex_touchpad_hint">Use this area as a touchpad to move the cursor</string>
     <string name="title_top_center_display">Display in Top Center</string>
     <string name="summary_top_center_display">Streaming picture will be aligned to the top of the screen instead of centered when resolution is not native.</string>
     <string name="title_touch_sensitivity">Touch Screen Sensitivity</string>

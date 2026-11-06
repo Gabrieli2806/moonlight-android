@@ -117,6 +117,15 @@ public class PreferenceConfiguration {
 
     private static final String CHECKBOX_SHOW_OVERLAY_ZOOM_TOGGLE_BUTTON = "checkbox_show_overlay_zoom_toggle_button";
 
+    // Foldable device preferences
+    private static final String CHECKBOX_FOLDABLE_ENABLED = "checkbox_foldable_enabled";
+    private static final String CHECKBOX_FOLDABLE_FLEX_MODE = "checkbox_foldable_flex_mode";
+    private static final String CHECKBOX_FOLDABLE_AUTO_RESOLUTION = "checkbox_foldable_auto_resolution";
+    private static final String CHECKBOX_FOLDABLE_FLEX_KEYBOARD = "checkbox_foldable_flex_keyboard";
+    private static final String CHECKBOX_FOLDABLE_AUTO_RECONNECT = "checkbox_foldable_auto_reconnect";
+    static final String FOLDABLE_FOLDED_RESOLUTION_PREF_STRING = "list_foldable_folded_resolution";
+    static final String FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING = "list_foldable_unfolded_resolution";
+
     //竖屏模式
     private static final String CHECKBOX_AUTO_ORIENTATION = "checkbox_auto_orientation";
     //屏幕特殊按键
@@ -139,10 +148,10 @@ public class PreferenceConfiguration {
     private static final String CHECKBOX_ENABLE_COMMIT_TEXT = "checkbox_enable_commit_text";
 
     // Foldable devices
-    private static final String CHECKBOX_FOLD_TABLETOP_MODE = "checkbox_fold_tabletop_mode";
     private static final String CHECKBOX_FOLD_KEYBOARD_AVOIDANCE = "checkbox_fold_keyboard_avoidance";
-    private static final boolean DEFAULT_FOLD_TABLETOP_MODE = true;
+    private static final String CHECKBOX_COVER_SCREEN_BUTTONS = "checkbox_cover_screen_buttons";
     private static final boolean DEFAULT_FOLD_KEYBOARD_AVOIDANCE = true;
+    private static final boolean DEFAULT_COVER_SCREEN_BUTTONS = false;
 
     static final String DEFAULT_RESOLUTION = "1280x720";
     static final String DEFAULT_FPS = "60";
@@ -214,6 +223,15 @@ public class PreferenceConfiguration {
     private static final boolean DEFAULT_ENABLE_COMMIT_TEXT = false;
     private static final String DEFAULT_ONSCREEN_KEYBOARD_ALIGN_MODE = "center";
     private static final boolean DEFAULT_SHOW_OVERLAY_TOGGLE_BUTTON = false;
+
+    // Foldable device defaults
+    private static final boolean DEFAULT_FOLDABLE_ENABLED = false;
+    private static final boolean DEFAULT_FOLDABLE_FLEX_MODE = true;
+    private static final boolean DEFAULT_FOLDABLE_AUTO_RESOLUTION = true;
+    private static final boolean DEFAULT_FOLDABLE_FLEX_KEYBOARD = false;
+    private static final boolean DEFAULT_FOLDABLE_AUTO_RECONNECT = false;
+    static final String DEFAULT_FOLDABLE_FOLDED_RESOLUTION = "1280x720";
+    static final String DEFAULT_FOLDABLE_UNFOLDED_RESOLUTION = "1920x1080";
 
     private static final boolean DEFAULT_REMEMBER_ZOOM_PAN = false;
     private static final float DEFAULT_ZOOM_SCALE = 1.0f;
@@ -297,8 +315,8 @@ public class PreferenceConfiguration {
     public boolean autoOrientation;
     //虚拟屏幕键盘按键
     public boolean enableKeyboard;
-    public boolean foldTabletopMode;
     public boolean foldKeyboardAvoidance;
+    public boolean coverScreenButtons;
     //修复JoyCon十字键
     public boolean enableJoyConFix;
 
@@ -306,6 +324,15 @@ public class PreferenceConfiguration {
     public boolean enableNewAnalogStick;
 
     public boolean enableFullExDisplay;
+
+    // Foldable device settings
+    public boolean foldableEnabled;
+    public boolean foldableFlexMode;
+    public boolean foldableAutoResolution;
+    public boolean foldableFlexKeyboard;
+    public boolean foldableAutoReconnect;
+    public int foldableFoldedWidth, foldableFoldedHeight;
+    public int foldableUnfoldedWidth, foldableUnfoldedHeight;
 
     //串流画面顶部居中显示
     public boolean alignDisplayTopCenter;
@@ -954,8 +981,8 @@ private static int getFramePacingValue(Context context) {
 
         config.enableKeyboard = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD,false);
 
-        config.foldTabletopMode = prefs.getBoolean(CHECKBOX_FOLD_TABLETOP_MODE, DEFAULT_FOLD_TABLETOP_MODE);
         config.foldKeyboardAvoidance = prefs.getBoolean(CHECKBOX_FOLD_KEYBOARD_AVOIDANCE, DEFAULT_FOLD_KEYBOARD_AVOIDANCE);
+        config.coverScreenButtons = prefs.getBoolean(CHECKBOX_COVER_SCREEN_BUTTONS, DEFAULT_COVER_SCREEN_BUTTONS);
 
         config.enableKeyboardVibrate = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD_VIBRATE,false);
         //兼容joycon手柄
@@ -1046,6 +1073,31 @@ private static int getFramePacingValue(Context context) {
         config.parallax_depth = prefs.getInt(PARALLAX_DEPTH, 50) / 100f;
         config.convergence_ratio = prefs.getInt(CONVERGENCE_RATIO, 50) / 100f;
         config.balance_shift = prefs.getInt(BALANCE_SHIFT, 50) / 100f;
+
+        // Foldable device preferences
+        config.foldableEnabled = prefs.getBoolean(CHECKBOX_FOLDABLE_ENABLED, DEFAULT_FOLDABLE_ENABLED);
+        config.foldableFlexMode = prefs.getBoolean(CHECKBOX_FOLDABLE_FLEX_MODE, DEFAULT_FOLDABLE_FLEX_MODE);
+        config.foldableAutoResolution = prefs.getBoolean(CHECKBOX_FOLDABLE_AUTO_RESOLUTION, DEFAULT_FOLDABLE_AUTO_RESOLUTION);
+        config.foldableFlexKeyboard = prefs.getBoolean(CHECKBOX_FOLDABLE_FLEX_KEYBOARD, DEFAULT_FOLDABLE_FLEX_KEYBOARD);
+        config.foldableAutoReconnect = prefs.getBoolean(CHECKBOX_FOLDABLE_AUTO_RECONNECT, DEFAULT_FOLDABLE_AUTO_RECONNECT);
+
+        String foldedRes = prefs.getString(FOLDABLE_FOLDED_RESOLUTION_PREF_STRING, DEFAULT_FOLDABLE_FOLDED_RESOLUTION);
+        if (foldedRes.contains("x")) {
+            config.foldableFoldedWidth = getWidthFromResolutionString(foldedRes);
+            config.foldableFoldedHeight = getHeightFromResolutionString(foldedRes);
+        } else {
+            config.foldableFoldedWidth = 1280;
+            config.foldableFoldedHeight = 720;
+        }
+
+        String unfoldedRes = prefs.getString(FOLDABLE_UNFOLDED_RESOLUTION_PREF_STRING, DEFAULT_FOLDABLE_UNFOLDED_RESOLUTION);
+        if (unfoldedRes.contains("x")) {
+            config.foldableUnfoldedWidth = getWidthFromResolutionString(unfoldedRes);
+            config.foldableUnfoldedHeight = getHeightFromResolutionString(unfoldedRes);
+        } else {
+            config.foldableUnfoldedWidth = 1920;
+            config.foldableUnfoldedHeight = 1080;
+        }
 
         return config;
     }

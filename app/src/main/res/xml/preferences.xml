@@ -106,6 +106,13 @@
             android:title="@string/title_top_center_display"
             app:iconSpaceReserved="false" />
 
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="checkbox_fold_keyboard_avoidance"
+            android:summary="@string/summary_fold_keyboard_avoidance"
+            android:title="@string/title_fold_keyboard_avoidance"
+            app:iconSpaceReserved="false" />
+
         <com.limelight.preferences.SeekBarPreference
             android:defaultValue="100"
             android:dialogMessage=""
@@ -216,6 +223,79 @@
             android:key="checkbox_enable_fullexdisplay"
             android:summary="@string/summary_fullexdisplay_mode"
             android:title="@string/title_fullexdisplay_mode"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="checkbox_foldable_enabled"
+            android:summary="@string/summary_foldable_enabled"
+            android:title="@string/title_foldable_enabled"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="checkbox_foldable_enabled"
+            android:key="checkbox_foldable_flex_mode"
+            android:summary="@string/summary_foldable_flex_mode"
+            android:title="@string/title_foldable_flex_mode"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="checkbox_foldable_enabled"
+            android:key="checkbox_foldable_auto_resolution"
+            android:summary="@string/summary_foldable_auto_resolution"
+            android:title="@string/title_foldable_auto_resolution"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:key="checkbox_foldable_auto_reconnect"
+            android:summary="@string/summary_foldable_auto_reconnect"
+            android:title="@string/title_foldable_auto_reconnect"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="checkbox_foldable_flex_mode"
+            android:key="checkbox_foldable_flex_keyboard"
+            android:summary="@string/summary_foldable_flex_keyboard"
+            android:title="@string/title_foldable_flex_keyboard"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:defaultValue="1280x720"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:entries="@array/resolution_names"
+            android:entryValues="@array/resolution_values"
+            android:key="list_foldable_folded_resolution"
+            android:summary="@string/summary_foldable_folded_resolution"
+            android:title="@string/title_foldable_folded_resolution"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:defaultValue="1920x1080"
+            android:dependency="checkbox_foldable_auto_resolution"
+            android:entries="@array/resolution_names"
+            android:entryValues="@array/resolution_values"
+            android:key="list_foldable_unfolded_resolution"
+            android:summary="@string/summary_foldable_unfolded_resolution"
+            android:title="@string/title_foldable_unfolded_resolution"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="checkbox_cover_screen_buttons"
+            android:summary="@string/summary_cover_screen_buttons"
+            android:title="@string/title_cover_screen_buttons_enable"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="cover_screen_buttons_config"
+            android:dependency="checkbox_cover_screen_buttons"
+            android:summary="@string/summary_cover_screen_buttons_config"
+            android:title="@string/title_cover_screen_buttons"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
@@ -479,24 +559,6 @@
             android:key="checkbox_enable_commit_text"
             android:summary="@string/summary_enable_commit_text"
             android:title="@string/title_enable_commit_text"
-            app:iconSpaceReserved="false" />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="category_foldable_settings"
-        android:title="@string/category_foldable_settings"
-        app:iconSpaceReserved="false">
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="checkbox_fold_tabletop_mode"
-            android:summary="@string/summary_fold_tabletop_mode"
-            android:title="@string/title_fold_tabletop_mode"
-            app:iconSpaceReserved="false" />
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="checkbox_fold_keyboard_avoidance"
-            android:summary="@string/summary_fold_keyboard_avoidance"
-            android:title="@string/title_fold_keyboard_avoidance"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 

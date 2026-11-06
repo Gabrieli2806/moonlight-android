@@ -52,6 +52,8 @@ import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.SpinnerDialog;
 import com.limelight.utils.UiHelper;
+import com.limelight.utils.FoldableDeviceHelper;
+import com.limelight.ui.FlexModePanel;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -150,6 +152,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private final TouchContext[] trackpadContextMap = new TouchContext[2];
     private PanZoomHandler panZoomHandler;
     private com.limelight.utils.FoldableHelper foldableHelper;
+    private com.limelight.utils.CoverScreenController coverScreenController;
     private long threeFingerDownTime = 0;
     private long fourFingerDownTime = 0;
     private long fiveFingerDownTime = 0;
@@ -176,12 +179,22 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private KeyBoardController keyBoardController;
 
     private KeyBoardLayoutController keyBoardLayoutController;
+    private KeyBoardLayoutController flexKeyBoardLayoutController;
 
     private PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
+    private FoldableDeviceHelper foldableDeviceHelper;
+    private FoldableDeviceHelper.FoldState lastFoldState = FoldableDeviceHelper.FoldState.UNKNOWN;
+    private boolean flexModeApplied = false;
+    private FlexModePanel flexModePanel;
 
     private int displayWidth;
     private int displayHeight;
+
+    // Resolution the currently running stream was started with. Used to detect
+    // when a fold/unfold requires renegotiating the stream resolution.
+    private int activeStreamWidth;
+    private int activeStreamHeight;
     private int currentOrientation;
 
     public NvConnection conn;
@@ -355,6 +368,18 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         prefConfig = PreferenceConfiguration.readPreferences(this);
         tombstonePrefs = Game.this.getSharedPreferences("DecoderTombstone", 0);
 
+        if (prefConfig.foldableEnabled) {
+            foldableDeviceHelper = new FoldableDeviceHelper(this);
+            foldableDeviceHelper.setListener((state, hingeBounds) -> handleFoldStateChanged(state));
+        }
+
+        applyFoldAwareResolution(lastFoldState);
+
+        // Remember what this stream is being started with, so a later fold/unfold
+        // can tell whether the resolution actually needs to change
+        activeStreamWidth = prefConfig.width;
+        activeStreamHeight = prefConfig.height;
+
         if (prefConfig.fullScreen) {
             // Full-screen
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -464,11 +489,14 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
         streamContainer.setInputCallbacks(this);
         streamContainer.setCommitTextEnabled(prefConfig.enableCommitText);
 
-        // Foldable QoL features (tabletop mode, keyboard avoidance)
-        if (prefConfig.foldTabletopMode || prefConfig.foldKeyboardAvoidance) {
-            foldableHelper = new com.limelight.utils.FoldableHelper(this, streamContainer,
-                    prefConfig.foldTabletopMode, prefConfig.foldKeyboardAvoidance);
-            foldableHelper.register();
+        // Keep the video visible above the soft keyboard while typing
+        if (prefConfig.foldKeyboardAvoidance) {
+            foldableHelper = new com.limelight.utils.FoldableHelper(this, streamContainer);
+        }
+
+        if (prefConfig.coverScreenButtons) {
+            coverScreenController = new com.limelight.utils.CoverScreenController(this);
+            coverScreenController.register();
         }
 
         rootView = streamContainer.getParent();
@@ -825,6 +853,21 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             trackpadContextMap[i] = new TrackpadContext(conn, i, prefConfig.trackpadSwapAxis, prefConfig.trackpadSensitivityX, prefConfig.trackpadSensitivityY);
         }
 
+        // Initialize flex mode panel for foldable devices
+        if (prefConfig.foldableEnabled) {
+            flexModePanel = new FlexModePanel(this, conn, new FlexModePanel.KeyboardToggleCallback() {
+                @Override
+                public void onToggleSoftKeyboard() {
+                    toggleKeyboard();
+                }
+
+                @Override
+                public void onToggleFullKeyboard() {
+                    toggleFullKeyboard();
+                }
+            });
+        }
+
         if (Objects.equals(appUUID, NvApp.REMOTE_INPUT_UUID)) {
             // Force trackpad mode since we won't see anything on the screen
             isInputOnly = true;
@@ -1119,6 +1162,72 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     }
 
     //显示隐藏虚拟特殊按键
+    // Modifier state held by the cover screen button pad, so that holding e.g.
+    // Shift there and then pressing another key produces a modified keystroke.
+    private byte coverScreenModifiers = 0;
+
+    /**
+     * Sends a key press/release originating from UI outside the stream window,
+     * such as the cover screen button pad.
+     *
+     * This talks to the connection directly instead of going through
+     * handleKeyDown(). That path filters on the input-grab state and on
+     * synthetic events with no real input device, both of which are meant for
+     * hardware key events delivered to the stream window and would silently
+     * drop these presses.
+     *
+     * @param androidKeyCode a KeyEvent.KEYCODE_* value
+     * @return a short description of what happened, for on-screen diagnostics
+     */
+    public String sendOffscreenKey(int androidKeyCode, boolean down) {
+        if (conn == null) {
+            return "no connection";
+        }
+        if (!connected) {
+            return "not connected";
+        }
+        if (keyboardTranslator == null) {
+            return "no translator";
+        }
+
+        short translated = keyboardTranslator.translate(androidKeyCode, 0, -1);
+        if (translated == 0) {
+            LimeLog.warning("No key mapping for cover screen key " + androidKeyCode);
+            return "no mapping for " + androidKeyCode;
+        }
+
+        byte modifier = getModifier(translated);
+
+        if (down) {
+            conn.sendKeyboardInput(translated, KeyboardPacket.KEY_DOWN, coverScreenModifiers, (byte) 0);
+            coverScreenModifiers |= modifier;
+        }
+        else {
+            coverScreenModifiers &= (byte) ~modifier;
+            conn.sendKeyboardInput(translated, KeyboardPacket.KEY_UP, coverScreenModifiers, (byte) 0);
+        }
+
+        return "VK 0x" + Integer.toHexString(translated & 0xFFFF) +
+                (down ? " down" : " up");
+    }
+
+    /** True when the cover screen button pad feature is enabled in settings. */
+    public boolean isCoverScreenButtonsEnabled() {
+        return coverScreenController != null;
+    }
+
+    /** Shows/hides the customizable button pad on the device's cover screen. */
+    public void toggleCoverScreenButtons() {
+        if (coverScreenController == null) {
+            return;
+        }
+
+        String error = coverScreenController.toggle();
+        if (error != null) {
+            Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+        }
+    }
+
     public void toggleKeyboardController(){
         if (keyBoardController==null) {
             initKeyboardController();
@@ -1147,6 +1256,203 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             return;
         }
         prefConfig.onscreenController= virtualController.switchShowHide() != 0;
+    }
+
+    private boolean applyFoldAwareResolution(FoldableDeviceHelper.FoldState foldState) {
+        if (!prefConfig.foldableEnabled || !prefConfig.foldableAutoResolution) {
+            return false;
+        }
+
+        int newWidth;
+        int newHeight;
+
+        // Prefer the WindowManager fold API over screen-size guesswork.
+        //
+        // A window laid out on the inner display always reports a FoldingFeature
+        // (FLAT when fully open, HALF_OPENED in flex posture). The cover screen
+        // has no hinge running through it, so no folding feature is reported
+        // there and the state comes back UNKNOWN. That distinction is what tells
+        // "open" apart from "closed" — the fold *state* alone cannot, because a
+        // closed and a fully-open device both look FLAT.
+        boolean unfolded;
+
+        if (foldState == FoldableDeviceHelper.FoldState.HALF_OPENED
+                || foldState == FoldableDeviceHelper.FoldState.FLAT) {
+            unfolded = true;
+        }
+        else {
+            // No folding feature: either the cover screen, or not a foldable at
+            // all. Fall back to screen size so ordinary tablets aren't treated
+            // as a folded phone.
+            int smallestWidthDp = getResources().getConfiguration().smallestScreenWidthDp;
+            unfolded = smallestWidthDp >= 600;
+        }
+
+        LimeLog.info("Foldable: foldState=" + foldState +
+                " smallestScreenWidthDp=" + getResources().getConfiguration().smallestScreenWidthDp +
+                " -> treating device as " + (unfolded ? "unfolded" : "folded"));
+
+        if (unfolded) {
+            newWidth = prefConfig.foldableUnfoldedWidth;
+            newHeight = prefConfig.foldableUnfoldedHeight;
+        }
+        else {
+            newWidth = prefConfig.foldableFoldedWidth;
+            newHeight = prefConfig.foldableFoldedHeight;
+        }
+
+        if (prefConfig.width != newWidth || prefConfig.height != newHeight) {
+            prefConfig.width = newWidth;
+            prefConfig.height = newHeight;
+            displayWidth = newWidth;
+            displayHeight = newHeight;
+            LimeLog.info("Foldable: applied stream resolution " + newWidth + "x" + newHeight);
+            return true;
+        }
+        return false;
+    }
+
+    private void applyFlexModeLayout(boolean enabled) {
+        if (!prefConfig.foldableEnabled || !prefConfig.foldableFlexMode) {
+            return;
+        }
+
+        if (enabled == flexModeApplied) {
+            return;
+        }
+
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int halfHeight = screenHeight / 2;
+
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) streamContainer.getLayoutParams();
+
+        if (enabled) {
+            params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            params.height = halfHeight;
+            streamContainer.setLayoutParams(params);
+
+            boolean useKeyboardMode = prefConfig.foldableFlexKeyboard;
+
+            // Show panel in the bottom half (keyboard+touchpad or touchpad-only)
+            if (flexModePanel != null) {
+                flexModePanel.show(halfHeight, useKeyboardMode);
+
+                // If keyboard+touchpad mode, inject keyboard into the panel's container
+                if (useKeyboardMode) {
+                    FrameLayout kbContainer = flexModePanel.getKeyboardContainer();
+                    if (kbContainer != null) {
+                        flexKeyBoardLayoutController = new KeyBoardLayoutController(kbContainer, this, prefConfig);
+                        flexKeyBoardLayoutController.setFlexMode(true);
+                        flexKeyBoardLayoutController.refreshLayout();
+                        flexKeyBoardLayoutController.show();
+                    }
+                }
+            }
+
+            if (keyBoardLayoutController != null) {
+                keyBoardLayoutController.refreshLayout();
+                if (keyBoardLayoutController.shown) {
+                    keyBoardLayoutController.show();
+                }
+            }
+
+            if (virtualController != null) {
+                virtualController.refreshLayout();
+            }
+
+            flexModeApplied = true;
+            LimeLog.info("Foldable: Flex Mode applied");
+        }
+        else {
+            params.gravity = Gravity.CENTER;
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            streamContainer.setLayoutParams(params);
+
+            // Hide flex keyboard controller if it was active
+            if (flexKeyBoardLayoutController != null) {
+                flexKeyBoardLayoutController.hide(false);
+                flexKeyBoardLayoutController = null;
+            }
+
+            // Hide touchpad panel
+            if (flexModePanel != null) {
+                flexModePanel.hide();
+            }
+
+            if (keyBoardLayoutController != null && keyBoardLayoutController.shown) {
+                keyBoardLayoutController.hide(false);
+            }
+
+            if (virtualController != null) {
+                virtualController.refreshLayout();
+            }
+
+            flexModeApplied = false;
+            LimeLog.info("Foldable: Flex Mode cleared");
+        }
+    }
+
+    private void handleFoldStateChanged(FoldableDeviceHelper.FoldState state) {
+        lastFoldState = state;
+
+        applyFoldAwareResolution(state);
+        applyFlexModeLayout(state == FoldableDeviceHelper.FoldState.HALF_OPENED
+            && foldableDeviceHelper != null
+            && foldableDeviceHelper.isHingeHorizontal());
+
+        maybeReconnectForFoldResolution();
+    }
+
+    /**
+     * Reconnects the stream when the posture-appropriate resolution no longer
+     * matches the resolution the running stream was started with.
+     *
+     * The stream resolution is negotiated once at connection time, so opening or
+     * closing the device can only take effect by reconnecting.
+     *
+     * This deliberately keys off the resolution rather than the fold state:
+     * a fully-closed and a fully-open device both report FoldState.FLAT, so
+     * comparing fold states would miss the open/close transition entirely.
+     * Comparing against the resolution the active stream actually uses also
+     * makes this safe to call from onConfigurationChanged(), which re-reads
+     * preferences and fires for unrelated changes such as rotation.
+     */
+    private void maybeReconnectForFoldResolution() {
+        if (!prefConfig.foldableEnabled || !prefConfig.foldableAutoResolution) {
+            LimeLog.info("Foldable: skipping reconnect check (foldableEnabled=" +
+                    prefConfig.foldableEnabled + " autoResolution=" +
+                    prefConfig.foldableAutoResolution + ")");
+            return;
+        }
+
+        if (!connected) {
+            LimeLog.info("Foldable: skipping reconnect check, not connected yet");
+            return;
+        }
+
+        if (prefConfig.width == activeStreamWidth && prefConfig.height == activeStreamHeight) {
+            LimeLog.info("Foldable: resolution already matches posture (" +
+                    activeStreamWidth + "x" + activeStreamHeight + "), no reconnect needed");
+            return;
+        }
+
+        LimeLog.info("Foldable: stream resolution needs to change from " +
+                activeStreamWidth + "x" + activeStreamHeight + " to " +
+                prefConfig.width + "x" + prefConfig.height +
+                " (autoReconnect=" + prefConfig.foldableAutoReconnect + ")");
+
+        if (prefConfig.foldableAutoReconnect) {
+            Toast.makeText(this,
+                    getString(R.string.toast_foldable_auto_reconnecting),
+                    Toast.LENGTH_SHORT).show();
+            Intent intent = getIntent();
+            finish();
+            startActivity(intent);
+        } else {
+            Toast.makeText(this,
+                    getString(R.string.toast_foldable_reconnect_required),
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private void setPreferredOrientationForActivity() {
@@ -1195,6 +1501,17 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+
+        prefConfig = PreferenceConfiguration.readPreferences(this);
+
+        if (foldableDeviceHelper != null) {
+            applyFoldAwareResolution(foldableDeviceHelper.getCurrentState());
+            applyFlexModeLayout(foldableDeviceHelper.isInFlexMode() && foldableDeviceHelper.isHingeHorizontal());
+
+            // Opening/closing the device resizes the screen, which lands here rather
+            // than as a fold state change, so this is where the reconnect is caught
+            maybeReconnectForFoldResolution();
+        }
 
         // Set requested orientation for possible new screen size
         setPreferredOrientationForActivity();
@@ -1717,6 +2034,10 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             foldableHelper.unregister();
         }
 
+        if (coverScreenController != null) {
+            coverScreenController.unregister();
+        }
+
         if (prefConfig.enableFullExDisplay) handleDisplayRemoved();
 
         if (controllerHandler != null) {
@@ -1770,8 +2091,22 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (foldableDeviceHelper != null) {
+            foldableDeviceHelper.start();
+            handleFoldStateChanged(foldableDeviceHelper.getCurrentState());
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
+
+        if (foldableDeviceHelper != null) {
+            foldableDeviceHelper.stop();
+        }
 
         SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();

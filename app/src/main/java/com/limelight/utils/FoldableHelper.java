@@ -1,112 +1,44 @@
 package com.limelight.utils;
 
 import android.app.Activity;
-import android.graphics.Rect;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.util.Consumer;
-import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter;
-import androidx.window.layout.FoldingFeature;
-import androidx.window.layout.WindowInfoTracker;
-import androidx.window.layout.WindowLayoutInfo;
 
 /**
- * Quality-of-life helper for foldable devices (e.g. Samsung Galaxy Z Fold/Flip).
+ * Keeps the video visible when the soft keyboard (IME) covers part of the screen.
  *
- * Provides two features, each individually toggleable:
- *  - Tabletop mode: when the device is half-opened with a horizontal hinge,
- *    the stream is scaled into the top half of the screen (above the hinge)
- *    so on-screen controls / virtual keyboard can live on the bottom half.
- *  - Keyboard avoidance: when the soft keyboard (IME) is visible, the stream
- *    is scaled to fit in the space above it so the video remains visible
- *    while typing.
+ * When the IME opens, the stream is scaled down and repositioned so it fits
+ * entirely in the space above the keyboard, letting the user keep watching
+ * while typing. This is useful on any device, not only foldables.
  *
- * The stream view is transformed with a uniform scale (pivot at the top
- * center), which preserves aspect ratio and avoids resizing the Surface,
- * so the decoder is not disturbed.
+ * Fold-specific behaviour (Flex/tabletop layout, per-posture stream resolution)
+ * is handled separately by {@link FoldableDeviceHelper} and the Flex Mode code
+ * in {@code Game}, which reposition the stream via layout parameters. This
+ * class deliberately only applies a scale + translation on top of whatever
+ * layout those produce, so the two do not fight over the same view.
  */
 public class FoldableHelper {
     private final Activity activity;
     private final View streamView;
-    private final boolean tabletopEnabled;
-    private final boolean keyboardAvoidanceEnabled;
 
-    private WindowInfoTrackerCallbackAdapter windowInfoTracker;
-
-    private int hingeObstructionPx = 0;
     private int imeObstructionPx = 0;
-    private boolean inTabletopMode = false;
 
-    private final Consumer<WindowLayoutInfo> layoutStateConsumer = this::onWindowLayoutInfoChanged;
-
-    public FoldableHelper(Activity activity, View streamView,
-                          boolean tabletopEnabled, boolean keyboardAvoidanceEnabled) {
+    public FoldableHelper(Activity activity, View streamView) {
         this.activity = activity;
         this.streamView = streamView;
-        this.tabletopEnabled = tabletopEnabled;
-        this.keyboardAvoidanceEnabled = keyboardAvoidanceEnabled;
 
-        if (tabletopEnabled) {
-            windowInfoTracker = new WindowInfoTrackerCallbackAdapter(
-                    WindowInfoTracker.getOrCreate(activity));
-        }
-
-        if (keyboardAvoidanceEnabled) {
-            ViewCompat.setOnApplyWindowInsetsListener(activity.getWindow().getDecorView(),
-                    (v, insets) -> {
-                        onImeInsetsChanged(insets);
-                        return insets;
-                    });
-        }
-    }
-
-    public void register() {
-        if (windowInfoTracker != null) {
-            windowInfoTracker.addWindowLayoutInfoListener(activity,
-                    Runnable::run, layoutStateConsumer);
-        }
+        ViewCompat.setOnApplyWindowInsetsListener(activity.getWindow().getDecorView(),
+                (v, insets) -> {
+                    onImeInsetsChanged(insets);
+                    return insets;
+                });
     }
 
     public void unregister() {
-        if (windowInfoTracker != null) {
-            windowInfoTracker.removeWindowLayoutInfoListener(layoutStateConsumer);
-        }
-    }
-
-    public boolean isInTabletopMode() {
-        return inTabletopMode;
-    }
-
-    private void onWindowLayoutInfoChanged(@NonNull WindowLayoutInfo layoutInfo) {
-        int newObstruction = 0;
-        boolean tabletop = false;
-
-        for (androidx.window.layout.DisplayFeature feature : layoutInfo.getDisplayFeatures()) {
-            if (!(feature instanceof FoldingFeature)) {
-                continue;
-            }
-
-            FoldingFeature fold = (FoldingFeature) feature;
-            if (fold.getState() == FoldingFeature.State.HALF_OPENED &&
-                    fold.getOrientation() == FoldingFeature.Orientation.HORIZONTAL) {
-                // Tabletop posture: keep the video above the hinge
-                Rect bounds = fold.getBounds();
-                int viewHeight = getViewHeight();
-                if (viewHeight > 0 && bounds.top > 0 && bounds.top < viewHeight) {
-                    newObstruction = viewHeight - bounds.top;
-                    tabletop = true;
-                }
-            }
-        }
-
-        if (newObstruction != hingeObstructionPx || tabletop != inTabletopMode) {
-            hingeObstructionPx = newObstruction;
-            inTabletopMode = tabletop;
-            streamView.post(this::applyTransform);
-        }
+        ViewCompat.setOnApplyWindowInsetsListener(activity.getWindow().getDecorView(), null);
+        reset();
     }
 
     private void onImeInsetsChanged(WindowInsetsCompat insets) {
@@ -117,30 +49,77 @@ public class FoldableHelper {
         }
     }
 
-    private int getViewHeight() {
-        int h = streamView.getHeight();
+    /** Height of the area the stream view is laid out within. */
+    private int getParentHeight() {
+        View parent = (View) streamView.getParent();
+        int h = parent != null ? parent.getHeight() : 0;
         if (h == 0) {
             h = activity.getResources().getDisplayMetrics().heightPixels;
         }
         return h;
     }
 
-    private void applyTransform() {
-        int obstruction = Math.max(hingeObstructionPx, imeObstructionPx);
-        int viewHeight = getViewHeight();
+    private int getParentWidth() {
+        View parent = (View) streamView.getParent();
+        int w = parent != null ? parent.getWidth() : 0;
+        if (w == 0) {
+            w = activity.getResources().getDisplayMetrics().widthPixels;
+        }
+        return w;
+    }
 
-        if (obstruction <= 0 || viewHeight <= 0 || obstruction >= viewHeight) {
-            streamView.setScaleX(1.0f);
-            streamView.setScaleY(1.0f);
-            streamView.setTranslationY(0);
+    private void reset() {
+        streamView.setScaleX(1.0f);
+        streamView.setScaleY(1.0f);
+        streamView.setTranslationY(0);
+    }
+
+    /**
+     * Scales and repositions the stream so it fills the space above the keyboard
+     * without leaving a letterbox gap.
+     *
+     * StreamContainer measures itself to exactly the video's aspect ratio, so the
+     * view bounds ARE the video bounds. Scaling around the view's own center and
+     * then translating that center onto the center of the free area avoids the
+     * gap a top-pivot scale would leave, and lets the video grow when the free
+     * area is taller than the video currently is.
+     */
+    private void applyTransform() {
+        int obstruction = imeObstructionPx;
+
+        if (obstruction <= 0) {
+            reset();
             return;
         }
 
-        float scale = (float) (viewHeight - obstruction) / (float) viewHeight;
-        streamView.setPivotX(streamView.getWidth() / 2.0f);
-        streamView.setPivotY(0);
+        int parentHeight = getParentHeight();
+        int parentWidth = getParentWidth();
+        int videoWidth = streamView.getWidth();
+        int videoHeight = streamView.getHeight();
+
+        if (parentHeight <= 0 || videoWidth <= 0 || videoHeight <= 0) {
+            reset();
+            return;
+        }
+
+        int availableHeight = parentHeight - obstruction;
+        if (availableHeight <= 0) {
+            reset();
+            return;
+        }
+
+        // Largest uniform scale that keeps the whole video inside the free area
+        float scale = Math.min((float) availableHeight / (float) videoHeight,
+                (float) parentWidth / (float) videoWidth);
+
+        streamView.setPivotX(videoWidth / 2.0f);
+        streamView.setPivotY(videoHeight / 2.0f);
         streamView.setScaleX(scale);
         streamView.setScaleY(scale);
-        streamView.setTranslationY(0);
+
+        // Pivoting at the center leaves the center where layout put it, so
+        // translate it onto the middle of the free area
+        float currentCenterY = streamView.getTop() + videoHeight / 2.0f;
+        streamView.setTranslationY((availableHeight / 2.0f) - currentCenterY);
     }
 }
