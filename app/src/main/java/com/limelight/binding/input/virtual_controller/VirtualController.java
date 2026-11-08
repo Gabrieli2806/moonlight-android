@@ -5,6 +5,7 @@
 package com.limelight.binding.input.virtual_controller;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,6 +25,7 @@ import com.limelight.preferences.PreferenceConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class VirtualController {
     public static class ControllerInputContext {
@@ -65,6 +67,11 @@ public class VirtualController {
     private Button buttonConfigure = null;
 
     private List<VirtualControllerElement> elements = new ArrayList<>();
+
+    // Area the controls are restricted to, or null to use the whole screen
+    private Rect foldArea = null;
+    // Set when only previewing the layout inside a small frame
+    private Rect previewArea = null;
 
     private Vibrator vibrator;
 
@@ -195,15 +202,93 @@ public class VirtualController {
         }
     }
 
+    /**
+     * Restricts the controls to the given area (in the coordinates of the parent layout),
+     * e.g. the half below the hinge of a half-folded device. Pass null to use the whole screen.
+     */
+    public void setFoldArea(Rect area) {
+        if (Objects.equals(area, foldArea)) {
+            return;
+        }
+        foldArea = area != null ? new Rect(area) : null;
+
+        if (elements.isEmpty()) {
+            // Not laid out yet. The new area will be used by the first refreshLayout().
+            return;
+        }
+
+        // Leave any configuration mode. Unsaved edits belong to the previous layout.
+        currentMode = ControllerMode.Active;
+
+        boolean hidden = buttonConfigure.getVisibility() != View.VISIBLE;
+        refreshLayout();
+        if (hidden) {
+            hide();
+        }
+    }
+
+    public boolean isFoldLayout() {
+        return foldArea != null;
+    }
+
+    public Rect getLayoutArea() {
+        if (foldArea != null) {
+            return new Rect(foldArea);
+        }
+        if (previewArea != null) {
+            return new Rect(previewArea);
+        }
+        DisplayMetrics screen = context.getResources().getDisplayMetrics();
+        return new Rect(0, 0, screen.widthPixels, screen.heightPixels);
+    }
+
+    String getProfileName() {
+        if (foldArea != null) {
+            return VirtualControllerConfigurationLoader.OSC_FOLD_PREFERENCE;
+        }
+        if (PreferenceConfiguration.readPreferences(context).oscGlyphStyle == PreferenceConfiguration.OSC_GLYPH_STYLE_PLAYSTATION) {
+            return VirtualControllerConfigurationLoader.OSC_PLAYSTATION_PREFERENCE;
+        }
+        return VirtualControllerConfigurationLoader.OSC_PREFERENCE;
+    }
+
+    /**
+     * Lays out the default controls inside a small frame (e.g. the preview in the settings).
+     * The controls are not interactive and the user's customized positions aren't applied.
+     *
+     * @param screenArea  the whole screen being previewed, in the frame's coordinates
+     * @param foldArea    the part of it below the hinge for a folded preview, or null
+     */
+    public static VirtualController createPreview(FrameLayout layout, Context context, Rect screenArea, Rect foldArea) {
+        VirtualController controller = new VirtualController(null, layout, context);
+        controller.previewArea = new Rect(screenArea);
+        controller.foldArea = foldArea != null ? new Rect(foldArea) : null;
+        controller.refreshLayout();
+        return controller;
+    }
+
     public void refreshLayout() {
         removeElements();
 
+        if (previewArea != null) {
+            VirtualControllerConfigurationLoader.createDefaultLayout(this, context);
+            return;
+        }
+
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
 
+        // The settings button stays in the top-left corner of the screen (over the stream
+        // when folded) so it doesn't collide with the shoulder buttons.
         int buttonSize = (int)(screen.heightPixels*0.06f);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(buttonSize, buttonSize);
         params.leftMargin = 15;
         params.topMargin = 15;
+        if (foldArea == null && PreferenceConfiguration.readPreferences(context).oscGlyphStyle ==
+                PreferenceConfiguration.OSC_GLYPH_STYLE_PLAYSTATION) {
+            // The PlayStation layout has L2 in the corner, so use the gap between L1 and the touchpad
+            float unit = Math.min(screen.heightPixels / 72f, screen.widthPixels / 128f);
+            params.leftMargin = Math.round(38 * unit);
+        }
         frame_layout.addView(buttonConfigure, params);
 
         // Start with the default layout

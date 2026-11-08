@@ -22,6 +22,8 @@ import com.limelight.LimeLog;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.StreamContainer;
 
+import java.util.Objects;
+
 /**
  * Keeps the stream visible on large/foldable screens by shrinking it into the area
  * above the soft keyboard, the on-screen full keyboard, or the hinge when the device
@@ -45,6 +47,8 @@ public class FoldSplitHelper {
         void setOverlayKeyboardHeight(int height);
         double getStreamAspectRatio();
         boolean isSplitSuspended();
+        // Area of the root view below the hinge while half-folded, or null when not
+        void onAreaBelowHingeChanged(Rect area);
     }
 
     private final Activity activity;
@@ -56,6 +60,7 @@ public class FoldSplitHelper {
     private final int[] location = new int[2];
     private int imeBottomInset = 0;
     private Rect hingeBounds = null;
+    private Rect lastAreaBelowHinge = null;
     private int reservedHeight = 0;
     private boolean splitActive = false;
     private Integer originalGravity = null;
@@ -192,7 +197,28 @@ public class FoldSplitHelper {
         host.setOverlayKeyboardHeight(Math.max(minHeight, Math.min(idealHeight, maxHeight)));
     }
 
+    private Rect computeAreaBelowHinge() {
+        int rootWidth = rootView.getWidth();
+        int rootHeight = rootView.getHeight();
+        if (!prefConfig.flexModeSplit || hingeBounds == null || rootHeight == 0 || host.isSplitSuspended()) {
+            return null;
+        }
+
+        rootView.getLocationInWindow(location);
+        int top = hingeBounds.bottom - location[1];
+        if (top <= 0 || rootHeight - top < rootHeight * MIN_STREAM_HEIGHT_FRACTION) {
+            return null;
+        }
+        return new Rect(0, top, rootWidth, rootHeight);
+    }
+
     private void update() {
+        Rect areaBelowHinge = computeAreaBelowHinge();
+        if (!Objects.equals(areaBelowHinge, lastAreaBelowHinge)) {
+            lastAreaBelowHinge = areaBelowHinge;
+            host.onAreaBelowHingeChanged(areaBelowHinge);
+        }
+
         fitOverlayKeyboard();
 
         int reserved = computeReservedHeight();

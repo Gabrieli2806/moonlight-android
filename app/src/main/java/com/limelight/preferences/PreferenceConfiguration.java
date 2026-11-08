@@ -264,6 +264,12 @@ public class PreferenceConfiguration {
     public boolean hideClipboardContent;
     public boolean stickyModifierKey;
     public boolean onlyL3R3;
+
+    // Glyphs (and default arrangement) of the on-screen controller
+    public static final int OSC_GLYPH_STYLE_CLASSIC = 1;
+    public static final int OSC_GLYPH_STYLE_PLAYSTATION = 2;
+    public static final String OSC_GLYPH_STYLE_PREF_STRING = "list_osc_glyph_style";
+    public int oscGlyphStyle;
     public boolean showGuideButton;
     public boolean enableHdr;
     public boolean enablePip;
@@ -925,6 +931,11 @@ private static int getFramePacingValue(Context context) {
         config.onscreenController = prefs.getBoolean(ONSCREEN_CONTROLLER_PREF_STRING, DEFAULT_ONSCREEN_CONTROLLER);
         config.hideOSCWhenHasGamepad = prefs.getBoolean(CHECKBOX_HIDE_OSC_WHEN_HAS_GAMEPAD, DEFAULT_HIDE_OSC_WHEN_HAS_GAMEPAD);
         config.onlyL3R3 = prefs.getBoolean(ONLY_L3_R3_PREF_STRING, ONLY_L3_R3_DEFAULT);
+        try {
+            config.oscGlyphStyle = Integer.parseInt(prefs.getString(OSC_GLYPH_STYLE_PREF_STRING, "" + OSC_GLYPH_STYLE_PLAYSTATION));
+        } catch (NumberFormatException e) {
+            config.oscGlyphStyle = OSC_GLYPH_STYLE_PLAYSTATION;
+        }
         config.showGuideButton = prefs.getBoolean(SHOW_GUIDE_BUTTON_PREF_STRING, SHOW_GUIDE_BUTTON_DEFAULT);
         config.enableHdr = prefs.getBoolean(ENABLE_HDR_PREF_STRING, DEFAULT_ENABLE_HDR) && !isShieldAtvFirmwareWithBrokenHdr();
         config.enablePip = prefs.getBoolean(ENABLE_PIP_PREF_STRING, DEFAULT_ENABLE_PIP);

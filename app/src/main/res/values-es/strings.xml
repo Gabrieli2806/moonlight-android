@@ -222,6 +222,13 @@
     <string name="summary_checkbox_touchscreen_trackpad">Si está activo, la pantalla táctil funcionará como panel táctil. Si está desactivado, la pantalla táctil directamente controlará el cursor del ratón.</string>
     <string name="summary_seekbar_deadzone">Nota: Algunos juegos pueden forzar una zona muerta mayor a la que Moonlight esta configurada a usar.</string>
     <string name="title_checkbox_flip_face_buttons">Invertir botones frontales</string>
+    <string name="title_osc_glyph_style">Glifos del gamepad</string>
+    <string name="summary_osc_glyph_style">Símbolos de los botones y disposición del control en pantalla</string>
+    <string name="osc_glyph_style_classic">Glifo 1 – Clásico (A/B/X/Y)</string>
+    <string name="osc_glyph_style_playstation">Glifo 2 – PlayStation (△ ○ ✕ □)</string>
+    <string name="title_osc_preview">Vista previa</string>
+    <string name="osc_preview_phone">Esta pantalla</string>
+    <string name="osc_preview_fold">Plegable medio doblado (controles bajo la bisagra)</string>
     <string name="summary_checkbox_absolute_mouse_mode">Esto puede hacer que la aceleración de mouse se comporte mas natural para uso de escritorio remoto, pero es incompatible con muchos juegos.</string>
     <string name="title_checkbox_enable_audiofx">Activar el soporte para ecualizador de sistema</string>
     <string name="summary_checkbox_vibrate_fallback">Vibrar el dispositivo para emular el retumbe si tu mando de control no lo soporta</string>

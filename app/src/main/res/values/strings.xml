@@ -239,6 +239,13 @@
     <string name="title_checkbox_remember_mouse_mode">Remember mouse mode</string>
     <string name="summary_checkbox_remember_mouse_mode">Remember mouse mode selected during stream. When disabled, mouse mode changed during stream will be temporary.</string>
     <string name="title_checkbox_flip_face_buttons">Flip face buttons</string>
+    <string name="title_osc_glyph_style">Gamepad glyphs</string>
+    <string name="summary_osc_glyph_style">Button symbols and arrangement of the on-screen controller</string>
+    <string name="osc_glyph_style_classic">Glyph 1 – Classic (A/B/X/Y)</string>
+    <string name="osc_glyph_style_playstation">Glyph 2 – PlayStation (△ ○ ✕ □)</string>
+    <string name="title_osc_preview">Preview</string>
+    <string name="osc_preview_phone">This screen</string>
+    <string name="osc_preview_fold">Foldable, half-folded (controls below the hinge)</string>
     <string name="summary_checkbox_flip_face_buttons">Switches the face buttons A/B and X/Y for gamepads and the on-screen controls</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Always control mouse with touchpad</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">Forces gamepad touchpad input to control the host mouse, even when emulating a gamepad with a touchpad.</string>

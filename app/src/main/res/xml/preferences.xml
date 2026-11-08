@@ -675,13 +675,27 @@
     <PreferenceCategory
         android:key="category_onscreen_controls"
         android:title="@string/category_on_screen_controls_settings"
-        app:initialExpandedChildrenCount="1"
+        app:initialExpandedChildrenCount="3"
         app:iconSpaceReserved="false">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="checkbox_show_onscreen_controls"
             android:summary="@string/summary_checkbox_show_onscreen_controls"
             android:title="@string/title_checkbox_show_onscreen_controls"
+            app:iconSpaceReserved="false" />
+        <ListPreference
+            android:defaultValue="2"
+            android:dependency="checkbox_show_onscreen_controls"
+            android:entries="@array/osc_glyph_style_names"
+            android:entryValues="@array/osc_glyph_style_values"
+            android:key="list_osc_glyph_style"
+            android:title="@string/title_osc_glyph_style"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+        <com.limelight.preferences.OscPreviewPreference
+            android:dependency="checkbox_show_onscreen_controls"
+            android:key="osc_preview"
+            android:title="@string/title_osc_preview"
             app:iconSpaceReserved="false" />
         <CheckBoxPreference
             android:defaultValue="true"

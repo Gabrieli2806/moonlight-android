@@ -210,6 +210,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
     private int specialKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private StreamContainer streamContainer;
     private FoldSplitHelper foldSplitHelper;
+    private Rect areaBelowHinge;
     private RearTouchpad rearTouchpad;
     private long synthTouchDownTime = 0;
 
@@ -499,6 +500,15 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
                         @Override
                         public boolean isSplitSuspended() {
                             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isInPictureInPictureMode();
+                        }
+
+                        @Override
+                        public void onAreaBelowHingeChanged(Rect area) {
+                            // Move the on-screen controller to the half below the hinge
+                            areaBelowHinge = area;
+                            if (virtualController != null) {
+                                virtualController.setFoldArea(area);
+                            }
                         }
                     });
             foldSplitHelper.start();
@@ -1136,6 +1146,7 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
 
     private void initVirtualController(){
         virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this);
+        virtualController.setFoldArea(areaBelowHinge);
         virtualController.refreshLayout();
         virtualController.show();
     }
