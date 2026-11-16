@@ -23,6 +23,7 @@ import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
+import com.limelight.binding.input.driver.SteamTritonBleManager;
 import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
@@ -724,6 +725,22 @@ public class StreamSettings extends AppCompatActivity {
                     return true;
                 }
             });
+
+            Preference steamBlePref = findPreference(PreferenceConfiguration.STEAM_CONTROLLER_BLE_STRING);
+            if (steamBlePref != null) {
+                if (!SteamTritonBleManager.isSupported(requireContext())) {
+                    PreferenceCategory category =
+                            (PreferenceCategory) findPreference("category_gamepad_settings");
+                    category.removePreference(steamBlePref);
+                } else {
+                    steamBlePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                        if ((Boolean) newValue) {
+                            SteamTritonBleManager.requestPermissionIfNeeded(requireActivity(), 0x5C);
+                        }
+                        return true;
+                    });
+                }
+            }
 
             findPreference("checkbox_enable_perf_logging").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override

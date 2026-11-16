@@ -93,8 +93,25 @@ android {
         }
     }
 
+    // Optional signing key from the environment (used by GitHub Actions). Without it, debug
+    // builds use the local debug key and release builds are left unsigned.
+    def signingKeystore = System.getenv("SIGNING_KEYSTORE_FILE")
+    signingConfigs {
+        if (signingKeystore) {
+            ci {
+                storeFile file(signingKeystore)
+                storePassword System.getenv("SIGNING_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
+            if (signingKeystore) {
+                signingConfig signingConfigs.ci
+            }
             applicationIdSuffix ".noirdebug"
             resValue "string", "app_label", "Diana"
             resValue "string", "app_label_root", "Diana (Root)"
@@ -135,6 +152,9 @@ android {
             //
             // TL;DR: Leave the following line alone!
             applicationIdSuffix ".noir"
+            if (signingKeystore) {
+                signingConfig signingConfigs.ci
+            }
             resValue "string", "app_label", "Artemis"
             resValue "string", "app_label_root", "Artemis (Root)"
             resValue "string", "app_label_game", "Artemis (Game)"

@@ -41,6 +41,11 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     private UsbDriverListener listener;
     private UsbDriverStateListener stateListener;
     private int nextDeviceId;
+    private SteamTritonBleManager steamBleManager;
+
+    private synchronized int allocateDeviceId() {
+        return nextDeviceId++;
+    }
 
     @Override
     public void reportControllerState(int controllerId, int buttonFlags, float leftStickX, float leftStickY,
@@ -205,6 +210,17 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             else if (ProConController.canClaimDevice(device)) {
                 controller = new ProConController(device, connection, nextDeviceId++, this);
             }
+            else if (SteamTritonController.canClaimDevice(device)) {
+                controller = new SteamTritonController(device, connection, allocateDeviceId(), this);
+            }
+            else if (SteamTritonDongle.canClaimDevice(device)) {
+                int dongleId = allocateDeviceId();
+                int firstSlotId = allocateDeviceId();
+                for (int i = 1; i < SteamTritonDongle.MAX_SLOTS; i++) {
+                    allocateDeviceId();
+                }
+                controller = new SteamTritonDongle(device, connection, dongleId, firstSlotId, this);
+            }
             else {
                 // Unreachable
                 return;
@@ -291,16 +307,32 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && Xbox360Controller.canClaimDevice(device)) ||
                 // We must not call isRecognizedInputDevice() because wireless controllers don't share the same product ID as the dongle
                 ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device)) ||
-                ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device));
+                ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device)) ||
+                // Android only sees the Steam Controller's keyboard/mouse emulation, so always take it over
+                isSteamTriton(device);
+    }
+
+    public static boolean isSteamTriton(UsbDevice device) {
+        return SteamTritonController.canClaimDevice(device) || SteamTritonDongle.canClaimDevice(device);
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void start() {
-        if (started || usbManager == null) {
+        if (started) {
             return;
         }
 
         started = true;
+
+        // Steam Controller (2026) over Bluetooth
+        if (prefConfig.steamControllerBle) {
+            steamBleManager = new SteamTritonBleManager(this, this, this::allocateDeviceId);
+            steamBleManager.start();
+        }
+
+        if (usbManager == null || !prefConfig.usbDriver) {
+            return;
+        }
 
         // Register for USB attach broadcasts and permission completions
         IntentFilter filter = new IntentFilter();
@@ -328,6 +360,15 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         }
 
         started = false;
+
+        if (steamBleManager != null) {
+            steamBleManager.stop();
+            steamBleManager = null;
+        }
+
+        if (usbManager == null || !prefConfig.usbDriver) {
+            return;
+        }
 
         // Stop the attachment receiver
         unregisterReceiver(receiver);

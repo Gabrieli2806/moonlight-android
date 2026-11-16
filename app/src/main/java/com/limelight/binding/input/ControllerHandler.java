@@ -38,6 +38,9 @@ import com.limelight.LimeLog;
 import com.limelight.R;
 import com.limelight.binding.input.driver.AbstractController;
 import com.limelight.binding.input.driver.UsbDriverListener;
+import com.limelight.binding.input.driver.SteamTritonBleController;
+import com.limelight.binding.input.driver.SteamTritonBleManager;
+import com.limelight.binding.input.driver.SteamTritonController;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.input.ControllerPacket;
@@ -391,7 +394,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     // We explicitly check not to claim devices that appear as InputDevices
                     // otherwise we will double count them.
                     if (UsbDriverService.shouldClaimDevice(dev, false) &&
-                            !UsbDriverService.isRecognizedInputDevice(dev)) {
+                            (UsbDriverService.isSteamTriton(dev) || !UsbDriverService.isRecognizedInputDevice(dev))) {
                         LimeLog.info("Counting UsbDevice: "+dev.getDeviceName());
                         mask |= 1 << count++;
                     }
@@ -1042,6 +1045,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         InputDeviceContext context = inputDeviceContexts.get(event.getDeviceId());
         if (context != null) {
             return context;
+        }
+
+        // Our own Bluetooth driver handles the Steam Controller (2026); skip Android's copy of it
+        // so it doesn't show up twice.
+        if (SteamTritonBleManager.isActive() &&
+                SteamTritonBleManager.isTritonInputDevice(event.getDevice().getVendorId(), event.getDevice().getProductId())) {
+            return null;
         }
 
         // Otherwise create a new context
@@ -3448,7 +3458,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             short capabilities = device.getCapabilities();
 
             // Report sensors if the input device has them or we're using built-in sensors for a built-in controller
-            if (type != MoonBridge.LI_CTYPE_PS && type != MoonBridge.LI_CTYPE_NINTENDO && sensorManager != null) {
+            // The Steam Controller stays an Xbox pad so the host emulates an Xbox 360 controller
+            if (type != MoonBridge.LI_CTYPE_PS && type != MoonBridge.LI_CTYPE_NINTENDO && sensorManager != null &&
+                    !(device instanceof SteamTritonController) && !(device instanceof SteamTritonBleController)) {
                 if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
                     capabilities |= MoonBridge.LI_CCAP_GYRO;
                 }

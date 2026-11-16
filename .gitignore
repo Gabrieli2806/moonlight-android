@@ -44,6 +44,3 @@ app/.externalNativeBuild/
 
 # NDK stuff
 .cxx/
-
-# agent files
-AGENTS.md

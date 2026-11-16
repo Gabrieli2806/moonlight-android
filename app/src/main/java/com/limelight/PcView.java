@@ -33,6 +33,7 @@ import com.limelight.utils.UiHelper;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Service;
+import com.limelight.binding.input.driver.SteamTritonBleManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -71,6 +72,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class PcView extends AppCompatActivity implements AdapterFragmentCallbacks {
+    private static final int STEAM_BLE_PERMISSION_REQUEST = 0x5C;
     private RelativeLayout noPcFoundLayout;
     private PcGridAdapter pcGridAdapter;
     private ShortcutHelper shortcutHelper;
@@ -213,6 +215,11 @@ public class PcView extends AppCompatActivity implements AdapterFragmentCallback
         // Assume we're in the foreground when created to avoid a race
         // between binding to CMS and onResume()
         inForeground = true;
+
+        // The Bluetooth Steam Controller driver needs BLUETOOTH_CONNECT on Android 12+
+        if (PreferenceConfiguration.readPreferences(this).steamControllerBle) {
+            SteamTritonBleManager.requestPermissionIfNeeded(this, STEAM_BLE_PERMISSION_REQUEST);
+        }
 
         // Create a GLSurfaceView to fetch GLRenderer unless we have
         // a cached result already.

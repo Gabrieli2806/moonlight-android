@@ -294,6 +294,12 @@
             app:iconSpaceReserved="false" />
         <CheckBoxPreference
             android:defaultValue="true"
+            android:key="checkbox_steam_controller_ble"
+            android:summary="@string/summary_checkbox_steam_controller_ble"
+            android:title="@string/title_checkbox_steam_controller_ble"
+            app:iconSpaceReserved="false" />
+        <CheckBoxPreference
+            android:defaultValue="true"
             android:key="checkbox_mouse_emulation"
             android:summary="@string/summary_checkbox_mouse_emulation"
             android:title="@string/title_checkbox_mouse_emulation"

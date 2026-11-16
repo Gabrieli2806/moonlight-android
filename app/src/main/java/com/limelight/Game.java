@@ -3789,8 +3789,8 @@ public class Game extends AppCompatActivity implements SurfaceHolder.Callback,
             }
         });
 
-        if (prefConfig.usbDriver) {
-            // Start the USB driver
+        if (prefConfig.usbDriver || prefConfig.steamControllerBle) {
+            // Start the USB driver (it also hosts the Bluetooth Steam Controller driver)
             bindService(new Intent(this, UsbDriverService.class),
                     usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
         }

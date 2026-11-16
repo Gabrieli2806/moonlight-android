@@ -239,6 +239,9 @@
     <string name="title_checkbox_remember_mouse_mode">Remember mouse mode</string>
     <string name="summary_checkbox_remember_mouse_mode">Remember mouse mode selected during stream. When disabled, mouse mode changed during stream will be temporary.</string>
     <string name="title_checkbox_flip_face_buttons">Flip face buttons</string>
+    <string name="title_checkbox_steam_controller_ble">Steam Controller (2026) over Bluetooth</string>
+    <string name="summary_checkbox_steam_controller_ble">Use a paired Steam Controller directly as an Xbox 360 controller. Pair it in the Android Bluetooth settings first.</string>
+    <string name="steam_ble_permission_denied">Bluetooth permission is needed to use the Steam Controller over Bluetooth</string>
     <string name="title_osc_glyph_style">Gamepad glyphs</string>
     <string name="summary_osc_glyph_style">Button symbols and arrangement of the on-screen controller</string>
     <string name="osc_glyph_style_classic">Glyph 1 – Classic (A/B/X/Y)</string>

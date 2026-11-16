@@ -1,84 +1,94 @@
-# Artemis Android
+# Artemis Android (Gabrieli2806 fork)
 
-Previously named Moonlight Noir
+[![Build APK](https://github.com/Gabrieli2806/moonlight-android/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Gabrieli2806/moonlight-android/actions/workflows/build-apk.yml)
 
-An open source client for [Apollo](https://github.com/ClassicOldSong/Apollo)/[Sunshine](https://github.com/LizardByte/Sunshine).
+An open source game streaming client for [Apollo](https://github.com/ClassicOldSong/Apollo) and [Sunshine](https://github.com/LizardByte/Sunshine), built on [Artemis](https://github.com/ClassicOldSong/moonlight-android) (previously Moonlight Noir), which is itself a fork of [Moonlight for Android](https://github.com/moonlight-stream/moonlight-android).
 
-Artemis Android will allow you to stream your collection of games from your Windows PC to your Android device,
-whether in your own home or over the internet.
+This fork adds better support for foldables, a PlayStation-style on-screen controller and the Steam Controller (2026). Everything from upstream Artemis is still here.
 
-Artemis is currently the best fork of Moonlight with loads of optimizations for office usage.
+## Download
 
-A more seamless experience with virtual display will be Artemis paired with [Apollo](https://github.com/ClassicOldSong/Apollo).
+- **Latest build:** the [`nightly` pre-release](https://github.com/Gabrieli2806/moonlight-android/releases/tag/nightly). It is rebuilt on every push to `moonlight-noir`.
+- **Tagged releases:** [Releases](https://github.com/Gabrieli2806/moonlight-android/releases).
 
-# Features
+Pick the APK for your device's CPU. Almost every current phone needs `arm64-v8a`. Use `x86_64` for emulators and Chromebooks.
 
-If you switch back to the main stream version, you'll be missing the following awesome features which are very unlikely to be added there:
+Debug APKs install as a separate app (`com.limelight.noirdebug`, shown as "Diana"), so they can sit next to a release install.
 
-1. Custom virtual buttons with import and export support.
-2. [Custom resolutions](https://github.com/moonlight-stream/moonlight-android/pull/1349).
-3. Custom bitrates.
-4. [Multiple mouse mode switching](https://github.com/moonlight-stream/moonlight-android/pull/1304) (normal mouse, [multi-touch](https://github.com/moonlight-stream/moonlight-android/pull/1364), touchpad, disabled, local cursor mode).
-5. Optimized virtual gamepad skins and free joystick.
-6. External monitor mode.
-7. Joycon D-pad support.
-8. Simplified performance information display.
-9. [Game back menu](https://github.com/moonlight-stream/moonlight-android/pull/1171).
-10. Custom shortcut commands.
-11. Easy soft keyboard switching.
-12. Portrait mode.
-13. Display on top mode, useful for foldable phones.
-14. [Virtual touchpad space and sensitivity adjustment](https://github.com/moonlight-stream/moonlight-android/issues/1348#issuecomment-2236344729) for playing right-click view games, such as Warcraft.
-15. Force use device's own vibration motor (in case your gamepad's vibration is not effective).
-16. Gamepad debugging page to view gamepad vibration and gyroscope information, as well as Android kernel version information.
-17. Trackpad tap/scrolling support
-18. Natural track pad mode with touch screen
-19. Non-QWERTY keyboard layout support
-20. Quick Meta key with physical BACK button
-21. Frame rate lock fix for some devices
-22. Video scale mode: Fit/Fill/Stretch
-23. View pan/zoom support
-24. Rotate screen in-game
-25. Add option to quit app directly
-26. Samsung DeX scrolling support
-27. Proper click/scroll/right-click for trackpad on generic Android tablet when using local cursor
-28. Virtual Display integration with [Apollo](https://github.com/ClassicOldSong/Apollo)
-29. Server Command integration with [Apollo](https://github.com/ClassicOldSong/Apollo)
-30. Clipboard sync (requires Apollo)
-31. SBS 3D for external Displays (Using AI MiDaS v2 Lite)
+## What this fork adds
 
-# Disclaimer
+### Steam Controller (2026)
+The Steam Controller is used directly by the app and shows up on the PC as an **Xbox 360 controller**. Android on its own only sees the controller's keyboard/mouse emulation.
 
-This is the `go away` version of Moonlight Android.
+- **Bluetooth:** pair the controller in Android's Bluetooth settings, then open Artemis and allow the Bluetooth permission. The controller connects on its own when you start a stream. You can turn this off in *Settings → Gamepad settings → Steam Controller (2026) over Bluetooth*.
+- **USB:** works with a cable or with the wireless puck plugged into the phone. The puck supports up to four controllers. This needs the USB driver setting (on by default).
+- Buttons, sticks, analog triggers and rumble all work. The back buttons, the "…" button and the trackpad clicks are sent as extra buttons, but an emulated Xbox 360 pad has no slot for them.
+- The host can't show it as a real Steam Controller, because the Moonlight protocol only knows Xbox, PlayStation and Nintendo controllers.
 
-I got kicked from Moonlight and Sunshine's Discord server literally for helping people out.
+### On-screen controller
+- New PlayStation layout: D-pad above the left stick, face buttons above the right stick, and both sticks toward the middle of the screen.
+- *Gamepad glyphs* setting: Glyph 1 is the classic layout with A/B/X/Y, Glyph 2 is the PlayStation layout with △ ○ ✕ □ (default).
+- A live preview in settings shows the controller on this screen and on a half-folded foldable.
+- Saved button positions are kept separately for the classic, PlayStation and folded layouts.
 
-This is what I got for finding a bug, opened an issue, getting no response, troubleshoot myself, fixed the issue myself, shared it by PR to the main repo hoping my efforts can help someone else during the maintainance gap.
+### Foldables
+- Flex mode: when the phone is half-folded, the stream goes on the top half and the bottom half becomes a trackpad, keyboard or controller area.
+- Split screen with the keyboard, so the keyboard doesn't cover the stream.
+- Black bars are cropped in split screen and picture-in-picture.
+- The rear screen can be used as a touchpad on devices that allow it.
 
-Yes, I'm going away. Fixes and improvements on this fork are not necessarily be merged to the main repo either. I have also started [a fork of Sunshine called Apollo](https://github.com/ClassicOldSong/Apollo) and will add useful features that will never get merged by the main repo shortly. [Apollo](https://github.com/ClassicOldSong/Apollo) and [Moonlight Noir](https://github.com/ClassicOldSong/moonlight-android) will no longer be compatible with OG Sunshine and OG Moonlight eventually, but they'll work even better with much more carefully designed features.
-
-The main repo had stayed silent for 5 months, with nobody actually responding to issues, and people are getting totally no help besides the limited FAQ in their Discord server. I tried to answer issues and questions, solve problems within my ablilty but I got kicked out just for helping others.
-
-**PRs for feature improvements are welcomed here unlike the main repo, your ideas are more likely to be appreciated and your efforts are actually being respected. We welcome people who can and willing to share their efforts, helping yourselves and other people in need.**
-
-**Update**: They have contacted me and apologized for this incident, but the fact it **happened** still motivated me to start my own fork.
-
-## Downloads
-* [Download APK directly](https://github.com/ClassicOldSong/moonlight-android/releases)
-* [Use Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.limelight.noir%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FClassicOldSong%2Fmoonlight-android%22%2C%22author%22%3A%22ClassicOldSong%22%2C%22name%22%3A%22Artemis%22%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22nonRoot%5C%22%2C%5C%22matchGroutToUse%5C%22%3A%5C%22%241%5C%22%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22v(.%2B)%5C%22%7D%22%7D) (recommended)
+### Inherited from Artemis
+Custom virtual buttons, custom resolutions and bitrates, several mouse modes (multi-touch, touchpad, local cursor), external monitor mode, portrait mode, clipboard sync, virtual display and server commands with Apollo, SBS 3D, non-QWERTY keyboard layouts, and more. See [upstream Artemis](https://github.com/ClassicOldSong/moonlight-android) for the full list.
 
 ## Building
-* Install Android Studio and the Android NDK
-* Run ‘git submodule update --init --recursive’ from within moonlight-android/
-* In moonlight-android/, create a file called ‘local.properties’. Add an ‘ndk.dir=’ property to the local.properties file and set it equal to your NDK directory.
-* Build the APK using Android Studio or gradle
 
-## Authors
+You need:
+- JDK 17 or newer (JDK 21 works)
+- Android SDK with platform 36
+- Android NDK `27.0.12077973`
 
-* [Cameron Gutman](https://github.com/cgutman)  
-* [Diego Waxemberg](https://github.com/dwaxemberg)  
-* [Aaron Neyer](https://github.com/Aaronneyer)  
-* [Andrew Hennessy](https://github.com/yetanothername)
+```sh
+git clone --recursive https://github.com/Gabrieli2806/moonlight-android.git
+cd moonlight-android
+# If you cloned without --recursive:
+git submodule update --init --recursive
 
-Moonlight is the work of students at [Case Western](http://case.edu) and was
-started as a project at [MHacks](http://mhacks.org).
+# Point Gradle at your SDK/NDK if Android Studio hasn't already
+echo "sdk.dir=/path/to/Android/Sdk" >> local.properties
+
+./gradlew assembleNonRoot_gameDebug
+```
+
+APKs are written to `app/build/outputs/apk/nonRoot_game/debug/`, one per ABI. Install one with `adb install -r app-nonRoot_game-arm64-v8a-debug.apk`.
+
+Other useful tasks:
+
+| Task | What it does |
+|---|---|
+| `./gradlew assembleNonRoot_gameRelease` | Release build (unsigned unless signing variables are set, see below) |
+| `./gradlew testNonRoot_gameDebugUnitTest` | JVM/Robolectric unit tests, see [android_test_setup.md](android_test_setup.md) |
+| `./gradlew compileNonRoot_gameDebugJavaWithJavac` | Quick Java-only compile check |
+
+## Continuous integration
+
+[`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml) builds APKs on every push, pull request and `v*` tag.
+- Each run uploads its APKs as an artifact.
+- A push to `moonlight-noir` replaces the `nightly` pre-release.
+- A tag like `v20.3.0` creates a normal release.
+
+To make CI builds install as updates of each other, the APKs must always be signed with the same key. Add these repository secrets:
+
+| Secret | Value |
+|---|---|
+| `SIGNING_KEYSTORE_BASE64` | The keystore file, base64-encoded |
+| `SIGNING_KEYSTORE_PASSWORD` | Keystore password |
+| `SIGNING_KEY_ALIAS` | Key alias |
+| `SIGNING_KEY_PASSWORD` | Key password |
+
+Without them, CI only builds debug APKs, each signed with a new throwaway key. You then have to uninstall before installing a newer build. The same variables (with `SIGNING_KEYSTORE_FILE` pointing at the keystore) also sign local builds.
+
+## Credits
+
+Moonlight was started by [Cameron Gutman](https://github.com/cgutman), [Diego Waxemberg](https://github.com/dwaxemberg), [Aaron Neyer](https://github.com/Aaronneyer) and [Andrew Hennessy](https://github.com/yetanothername) at [Case Western](http://case.edu) and [MHacks](http://mhacks.org). Artemis is by [ClassicOldSong](https://github.com/ClassicOldSong). The Steam Controller protocol details come from [SDL](https://github.com/libsdl-org/SDL).
+
+Licensed under the GPLv3, see [LICENSE.txt](LICENSE.txt).

@@ -222,6 +222,9 @@
     <string name="summary_checkbox_touchscreen_trackpad">Si está activo, la pantalla táctil funcionará como panel táctil. Si está desactivado, la pantalla táctil directamente controlará el cursor del ratón.</string>
     <string name="summary_seekbar_deadzone">Nota: Algunos juegos pueden forzar una zona muerta mayor a la que Moonlight esta configurada a usar.</string>
     <string name="title_checkbox_flip_face_buttons">Invertir botones frontales</string>
+    <string name="title_checkbox_steam_controller_ble">Steam Controller (2026) por Bluetooth</string>
+    <string name="summary_checkbox_steam_controller_ble">Usa un Steam Controller emparejado directamente como control de Xbox 360. Primero emparéjalo en los ajustes de Bluetooth de Android.</string>
+    <string name="steam_ble_permission_denied">Se necesita el permiso de Bluetooth para usar el Steam Controller por Bluetooth</string>
     <string name="title_osc_glyph_style">Glifos del gamepad</string>
     <string name="summary_osc_glyph_style">Símbolos de los botones y disposición del control en pantalla</string>
     <string name="osc_glyph_style_classic">Glifo 1 – Clásico (A/B/X/Y)</string>
