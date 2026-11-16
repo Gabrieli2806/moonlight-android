@@ -43,9 +43,9 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;${NDK_VERSION}"
           echo "ndk.dir=$ANDROID_HOME/ndk/${NDK_VERSION}" > local.properties
 
-      # Signing is optional: add these repository secrets to get APKs that update in place.
-      # Without them, every run is signed with a new throwaway debug key and the release
-      # build is skipped (an unsigned APK can't be installed).
+      # Signing: these repository secrets hold the key every build is signed with, so a new
+      # APK installs as an update over the previous one. Without them every run gets a new
+      # throwaway key and Android refuses the update (signature mismatch).
       - name: Decode signing key
         id: signing
         env:
@@ -56,7 +56,7 @@ jobs:
             echo "SIGNING_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
             echo "signed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::SIGNING_KEYSTORE_BASE64 is not set; building debug APKs with a throwaway key"
+            echo "::warning::SIGNING_KEYSTORE_BASE64 is not set; these APKs can't update an existing install"
             echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -67,7 +67,8 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           tasks="assembleNonRoot_gameDebug"
-          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+          # Release APKs (package com.limelight.noir) only for tagged releases
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ] && [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             tasks="$tasks assembleNonRoot_gameRelease"
           fi
           ./gradlew $tasks --no-daemon --stacktrace
@@ -105,7 +106,7 @@ jobs:
             --prerelease \
             --target "$GITHUB_SHA" \
             --title "Nightly ${{ steps.collect.outputs.version }} (${{ steps.collect.outputs.short_sha }})" \
-            --notes "Automatic build of ${GITHUB_SHA}. Install the arm64-v8a APK on most phones."
+            --notes "Automatic build of ${GITHUB_SHA}. Install the arm64-v8a APK on most phones. Signed: ${{ steps.signing.outputs.signed }}."
 
       # Pushing a tag like v20.3.0 creates a normal release
       - name: Publish tagged release

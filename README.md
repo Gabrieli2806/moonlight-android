@@ -76,7 +76,7 @@ Other useful tasks:
 - A push to `moonlight-noir` replaces the `nightly` pre-release.
 - A tag like `v20.3.0` creates a normal release.
 
-To make CI builds install as updates of each other, the APKs must always be signed with the same key. Add these repository secrets:
+To make CI builds install as updates of each other (and of your local builds), the APKs must always be signed with the same key. For a personal build, the simplest key is your local debug keystore (`~/.android/debug.keystore`, password `android`, alias `androiddebugkey`). Keep a backup of it, because if it is lost, installed apps can't be updated anymore. Add these repository secrets:
 
 | Secret | Value |
 |---|---|
@@ -85,7 +85,7 @@ To make CI builds install as updates of each other, the APKs must always be sign
 | `SIGNING_KEY_ALIAS` | Key alias |
 | `SIGNING_KEY_PASSWORD` | Key password |
 
-Without them, CI only builds debug APKs, each signed with a new throwaway key. You then have to uninstall before installing a newer build. The same variables (with `SIGNING_KEYSTORE_FILE` pointing at the keystore) also sign local builds.
+Without them, every run is signed with a new throwaway key and Android refuses to install it over an existing copy. Release APKs (`com.limelight.noir`) are only built for `v*` tags. The same variables (with `SIGNING_KEYSTORE_FILE` pointing at the keystore) also sign local builds.
 
 ## Credits
 
